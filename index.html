@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ijpsead</title>
+  <meta name="description" content="ijpsead 的个人名片👋">
+  <meta property="og:title" content="ijpsead">
+  <meta property="og:type" content="website">
+  <meta property="og:description" content="ijpsead 的个人名片👋">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👋</text></svg>">
+
+  <!-- Tailwind CSS + DaisyUI CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      plugins: [daisyui],
+      daisyui: {
+        themes: ["light", "dark"],
+      },
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .avatar-ring {
+      box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.15), 0 0 0 12px rgba(139, 92, 246, 0.06);
+    }
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-hover:hover {
+      transform: translateY(-4px);
+    }
+
+    /* 打字机光标 */
+    .typing-cursor::after {
+      content: '|';
+      animation: blink 1s step-end infinite;
+      color: #8b5cf6;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* 进度条动画 */
+    .progress-bar {
+      animation: progressAnim 2s ease-out forwards;
+    }
+    @keyframes progressAnim {
+      from { width: 0%; }
+    }
+
+    /* 卡片背景粒子 */
+    .particle-bg {
+      position: relative;
+      overflow: hidden;
+    }
+    .particle-bg::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 70%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 30%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
+      animation: particleFloat 8s ease-in-out infinite;
+    }
+    @keyframes particleFloat {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(1%, -1%) rotate(1deg); }
+      66% { transform: translate(-1%, 1%) rotate(-1deg); }
+    }
+
+    /* 倒计时卡片特殊样式 */
+    .countdown-card {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .countdown-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-neutral-900 min-h-screen">
+  <div class="container mx-auto max-w-screen-2xl px-2 xs:px-5 lg:px-10">
+
+    <!-- 主布局：左侧头像 + 右侧内容 -->
+    <div class="xl:flex xl:flex-row xl:justify-between">
+
+      <!-- ===== 左侧边栏 ===== -->
+      <aside class="min-w-full md:min-w-0 xl:basis-1/3 xl:h-screen xl:sticky xl:top-0 flex flex-col justify-center">
+        <div class="pt-10 xl:pt-0"></div>
+        <div class="flex flex-col items-center xl:items-start xl:pl-10">
+          <!-- 头像 -->
+          <div class="avatar online placeholder mb-6">
+            <div class="w-32 h-32 md:w-52 md:h-52 rounded-full avatar-ring bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center">
+              <span class="text-5xl md:text-7xl font-bold">i</span>
+            </div>
+          </div>
+
+          <!-- 名字 -->
+          <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-3">
+            ijpsead
+          </h1>
+
+          <!-- 一句话介绍 -->
+          <p class="text-lg text-gray-500 dark:text-gray-400 mb-4 typing-cursor">
+            Stay hungry, stay foolish.
+          </p>
+
+          <!-- 状态标签 -->
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="badge badge-lg bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700 px-4 py-3 text-sm">
+              📚 备考中
+            </span>
+            <span class="badge badge-lg bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700 px-4 py-3 text-sm">
+              🎓 大三在读
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ===== 右侧内容区 ===== -->
+      <main>
+        <div class="pt-6 xl:pt-12"></div>
+        <div class="grid grid-cols-4 gap-x-4 lg:gap-x-8 lg:w-[54rem]">
+
+          <!-- ---- 关于我卡片 ---- -->
+          <div class="col-span-4 md:col-span-2">
+            <div class="card card-hover rounded-2xl shadow-xl w-full md:h-[10.5rem] lg:w-[26rem] lg:h-[12rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700
+                        hover:shadow-2xl hover:shadow-purple-200/50 dark:hover:shadow-purple-900/30">
+              <div class="card-body">
+                <h2 class="card-title text-xl whitespace-nowrap">
+                  <span class="text-2xl mr-2">👤</span>ijpsead
+                </h2>
+                <p class="text-gray-600 dark:text-gray-300">
+                  平凡大三生 · 考研预备役<br>
+                  正在努力上岸中 🏊‍♂️
+                </p>
+                <div class="card-actions justify-end">
+                  <button class="btn btn-sm rounded-xl border-0 bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600">
+                    关于我 · 了解更多
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ---- 考研倒计时卡片 ---- -->
+            <a href="#" class="col-span-4 md:col-span-2 block">
+              <div class="card card-hover rounded-2xl shadow-xl w-full md:h-[10.5rem] lg:w-[26rem] lg:h-[12rem] mb-8
+                          countdown-card text-white border-0
+                          hover:shadow-2xl hover:shadow-blue-500/30">
+                <div class="card-body relative z-10">
+                  <h2 class="card-title text-xl whitespace-nowrap text-white">
+                    ⏳ 考研倒计时
+                  </h2>
+                  <div class="flex items-center gap-4 my-2">
+                    <div class="text-center">
+                      <span class="text-4xl font-black" id="countdown-days">--</span>
+                      <p class="text-xs text-blue-200">天</p>
+                    </div>
+                    <div class="text-3xl text-blue-300">:</div>
+                    <div class="text-center">
+                      <span class="text-3xl font-bold" id="countdown-hours">--</span>
+                      <p class="text-xs text-blue-200">时</p>
+                    </div>
+                    <div class="text-3xl text-blue-300">:</div>
+                    <div class="text-center">
+                      <span class="text-3xl font-bold" id="countdown-mins">--</span>
+                      <p class="text-xs text-blue-200">分</p>
+                    </div>
+                  </div>
+                  <p class="text-sm text-blue-200">距离2026年考研 (12月)</p>
+                  <div class="card-actions justify-end">
+                    <button class="btn btn-sm rounded-xl border-0 bg-white/20 text-white hover:bg-white/30 backdrop-blur">
+                      全力以赴 🔥
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <!-- ---- 算法笔记区域标题 ---- -->
+          <div class="col-span-4">
+            <div class="card rounded-xl flex justify-center shadow-lg w-full lg:w-[54rem] lg:h-[5rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700">
+              <div class="card-body">
+                <h2 class="card-title text-xl">📐 学习笔记</h2>
+              </div>
+            </div>
+          </div>
+
+          <!-- 考研408卡片 -->
+          <div class="col-span-4 md:col-span-2">
+            <div class="card card-hover rounded-2xl shadow-lg w-full md:h-[10.5rem] lg:w-[26rem] lg:h-[12rem] mb-8
+                        bg-gradient-to-br from-indigo-500 to-purple-600 text-white
+                        hover:shadow-2xl hover:shadow-indigo-300/30">
+              <div class="card-body">
+                <h2 class="card-title text-lg text-white">
+                  <span class="text-2xl mr-2">🎯</span>考研 408
+                </h2>
+                <p class="text-sm text-indigo-100 leading-relaxed">
+                  数据结构 · 顺序表 & 链表<br/>
+                  从暴力到优化的完整思路
+                </p>
+                <div class="flex flex-wrap gap-1 mt-1">
+                  <span class="badge badge-xs bg-white/20 text-white backdrop-blur">二分模板</span>
+                  <span class="badge badge-xs bg-white/20 text-white backdrop-blur">前缀和</span>
+                  <span class="badge badge-xs bg-white/20 text-white backdrop-blur">双指针</span>
+                  <span class="badge badge-xs bg-white/20 text-white backdrop-blur">链表</span>
+                </div>
+                <div class="card-actions justify-end">
+                  <a href="算法题笔记.html" class="btn btn-sm rounded-xl border-0 bg-white/20 text-white hover:bg-white/30 backdrop-blur">
+                    开始学习 🚀
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---- 个人项目区域标题 ---- -->
+          <div class="col-span-4">
+            <div class="card rounded-xl flex justify-center shadow-lg w-full lg:w-[54rem] lg:h-[5rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700">
+              <div class="card-body">
+                <h2 class="card-title text-xl">🚀 个人项目</h2>
+              </div>
+            </div>
+          </div>
+
+          <!-- 项目占位卡片 -->
+          <div class="col-span-4">
+            <div class="card card-hover rounded-2xl shadow-lg w-full lg:w-[54rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-dashed border-gray-300 dark:border-neutral-600
+                        hover:shadow-xl">
+              <div class="card-body text-center py-12">
+                <div class="text-4xl mb-3">🔧</div>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">项目作品开发中，敬请期待…</p>
+                <p class="text-gray-400 dark:text-gray-500 text-xs mt-1">有想法就来一起搞 💡</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---- 联系我 ---- -->
+          <div class="col-span-4">
+            <div class="card rounded-xl flex justify-center shadow-lg w-full lg:w-[54rem] lg:h-[5rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700">
+              <div class="card-body">
+                <h2 class="card-title text-xl">📫 与我联系</h2>
+              </div>
+            </div>
+          </div>
+
+          <!-- 联系方式卡片 -->
+          <div class="col-span-4 md:col-span-2">
+            <div class="card card-hover rounded-xl shadow-lg w-full lg:w-[26rem] md:h-[4.25rem] lg:h-[5rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700
+                        hover:shadow-xl">
+              <div class="card-body justify-center">
+                <div class="flex items-center">
+                  <span class="text-2xl mr-3">📧</span>
+                  <span class="text-base text-gray-600 dark:text-gray-300">ijpsead@example.com</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-4 md:col-span-2">
+            <div class="card card-hover rounded-xl shadow-lg w-full lg:w-[26rem] md:h-[4.25rem] lg:h-[5rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700
+                        hover:shadow-xl">
+              <div class="card-body justify-center">
+                <div class="flex items-center">
+                  <span class="text-2xl mr-3">🐙</span>
+                  <span class="text-base text-gray-600 dark:text-gray-300">github.com/ijpsead</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span-4 md:col-span-2">
+            <div class="card card-hover rounded-xl shadow-lg w-full lg:w-[26rem] md:h-[4.25rem] lg:h-[5rem] mb-8
+                        bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700
+                        hover:shadow-xl">
+              <div class="card-body justify-center">
+                <div class="flex items-center">
+                  <span class="text-2xl mr-3">🐧</span>
+                  <span class="text-base text-gray-600 dark:text-gray-300">2216045275</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- grid -->
+
+        <!-- Footer -->
+        <footer class="text-center py-10 text-sm text-gray-400 dark:text-gray-500">
+          <div>made with ❤️ by <span class="text-purple-500">ijpsead</span></div>
+          <div>🚀 powered by Tailwind CSS & DaisyUI</div>
+          <div>💡 inspired by idealclover.top</div>
+        </footer>
+
+      </main>
+    </div><!-- xl:flex -->
+  </div><!-- container -->
+
+  <!-- 考研倒计时脚本 -->
+  <script>
+    function updateCountdown() {
+      // 2026年考研初试通常在12月倒数第二个周末，设为12月20日
+      const examDate = new Date('2026-12-20T08:30:00+08:00');
+      const now = new Date();
+      const diff = examDate - now;
+
+      if (diff <= 0) {
+        document.getElementById('countdown-days').textContent = '00';
+        document.getElementById('countdown-hours').textContent = '00';
+        document.getElementById('countdown-mins').textContent = '00';
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      document.getElementById('countdown-days').textContent = String(days).padStart(2, '0');
+      document.getElementById('countdown-hours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('countdown-mins').textContent = String(mins).padStart(2, '0');
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 60000); // 每分钟更新
+  </script>
+</body>
+</html>

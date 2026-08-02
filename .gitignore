@@ -1,0 +1,32 @@
+# 非网站文件
+力学数据/
+plot.py
+MAA-v5.11.1-win-x64/
+简历第0版.pdf
+01\(1\).2027考研数学全程学习包/
+第四小组/
+重生2025：我在化科院转码成功/
+front-end practice/
+家教个人简历.docx
+CS50.docx
+CS61A.docx
+一休算法课程讲义（学员版）_扫描版.pdf
+
+# Word源文件
+算法题.docx
+
+# OCR临时文件
+ocr_results/
+
+# 临时图片
+算法题_images/word/media/small/
+算法题_images/word/media/*.jpg
+
+# 算法题笔记markdown（可选保留）
+# 算法题笔记.md
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*.docx

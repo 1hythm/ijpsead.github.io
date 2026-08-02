@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>算法题笔记 · 顺序表 & 链表 | 考研408</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['"LXGW WenKai"', '"Noto Serif SC"', 'serif'] } } },
+      daisyui: { themes: ["light", "dark"], logs: false }
+    }
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+  <script>hljs.highlightAll();</script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Noto Serif SC', serif; }
+    code, pre, .font-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    pre { border-radius: 0.75rem; font-size: 0.875rem; }
+    pre code { font-size: 0.875rem; line-height: 1.7; }
+    .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up { animation: fadeUp 0.6s ease both; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+    .img-card img {
+      border-radius: 0.5rem;
+      max-width: 100%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-base-200">
+
+  <!-- ========== 顶部导航 ========== -->
+  <div class="navbar bg-base-100 shadow-sm sticky top-0 z-50">
+    <div class="navbar-start">
+      <div class="dropdown">
+        <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+          </svg>
+        </div>
+        <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-10 mt-3 w-52 p-2 shadow">
+          <li><a href="#intro">概述</a></li>
+          <li><a href="#seqlist">一、顺序表</a></li>
+          <li><a href="#brute" class="pl-6">暴力解法</a></li>
+          <li><a href="#qsort" class="pl-6">快速排序</a></li>
+          <li><a href="#binary-search" class="pl-6">折半查找</a></li>
+          <li><a href="#hash" class="pl-6">散列表</a></li>
+          <li><a href="#preprocess" class="pl-6">预处理</a></li>
+          <li><a href="#two-pointers" class="pl-6">多指针法</a></li>
+          <li><a href="#linked-list">二、链表</a></li>
+          <li><a href="#ll-compare" class="pl-6">比较与流程</a></li>
+          <li><a href="#ll-def" class="pl-6">定义</a></li>
+          <li><a href="#ll-basic" class="pl-6">基本操作</a></li>
+          <li><a href="#ll-brute" class="pl-6">暴力解法</a></li>
+          <li><a href="#ll-optimize" class="pl-6">优化解法</a></li>
+          <li><a href="#ll-reverse" class="pl-6">逆置</a></li>
+          <li><a href="#ll-exam" class="pl-6">经典真题</a></li>
+          <li><a href="#summary">总结</a></li>
+        </ul>
+      </div>
+      <a class="btn btn-ghost text-xl font-bold gap-2">
+        <span class="text-primary">📐</span> 算法题笔记
+      </a>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal px-1 gap-1 text-sm">
+        <li><a href="#intro">概述</a></li>
+        <li>
+          <details>
+            <summary>顺序表</summary>
+            <ul class="p-2 bg-base-100 rounded-box w-40 shadow">
+              <li><a href="#brute">暴力解法</a></li>
+              <li><a href="#qsort">快速排序</a></li>
+              <li><a href="#binary-search">折半查找</a></li>
+              <li><a href="#hash">散列表</a></li>
+              <li><a href="#preprocess">预处理</a></li>
+              <li><a href="#two-pointers">多指针法</a></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details>
+            <summary>链表</summary>
+            <ul class="p-2 bg-base-100 rounded-box w-44 shadow">
+              <li><a href="#ll-compare">比较与流程</a></li>
+              <li><a href="#ll-def">链表的定义</a></li>
+              <li><a href="#ll-basic">基本操作</a></li>
+              <li><a href="#ll-brute">暴力解法</a></li>
+              <li><a href="#ll-optimize">优化解法</a></li>
+              <li><a href="#ll-reverse">逆置</a></li>
+              <li><a href="#ll-exam">经典真题</a></li>
+            </ul>
+          </details>
+        </li>
+        <li><a href="#summary">总结</a></li>
+      </ul>
+    </div>
+    <div class="navbar-end">
+      <label class="flex cursor-pointer gap-2 items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <span class="text-xs text-base-content/60">暗色</span>
+        <input type="checkbox" class="toggle theme-controller" value="dark" />
+      </label>
+    </div>
+  </div>
+
+  <!-- ========== 主内容区 ========== -->
+  <main class="max-w-4xl mx-auto px-4 py-8 space-y-12">
+
+    <!-- ====== 头部 ====== -->
+    <section id="intro" class="text-center py-12 animate-fade-up">
+      <div class="badge badge-primary badge-outline mb-4">考研 408 · 数据结构</div>
+      <h1 class="text-4xl lg:text-5xl font-bold tracking-tight mb-4">算法题笔记</h1>
+      <p class="text-base-content/60 max-w-xl mx-auto leading-relaxed">
+        系统梳理<strong>顺序表</strong>和<strong>链表</strong>的常见算法思想。<br/>
+        涵盖暴力枚举、快速排序、折半查找、散列表、预处理、多指针法、逆置等核心方法。
+      </p>
+      <div class="mt-6 flex justify-center gap-3 flex-wrap">
+        <div class="badge badge-ghost gap-1">⏱ 折半查找 O(log n)</div>
+        <div class="badge badge-ghost gap-1">🗂 散列表 O(n)</div>
+        <div class="badge badge-ghost gap-1">📊 前缀和 O(n)+O(1)</div>
+        <div class="badge badge-ghost gap-1">👉 多指针法</div>
+        <div class="badge badge-ghost gap-1">🔗 链表</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 第一部分：顺序表 -->
+    <!-- ============================================================ -->
+    <section id="seqlist" class="animate-fade-up delay-1">
+      <h2 class="text-3xl font-bold mb-8 flex items-center gap-3 border-b border-base-300 pb-4">
+        <span class="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center text-xl">一</span>
+        顺序表
+      </h2>
+
+      <!-- 暴力解法 -->
+      <article id="brute" class="mb-10">
+        <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+          <span class="text-primary">1.</span> 暴力解法
+        </h3>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="card bg-base-100 shadow-sm hover-lift">
+            <div class="card-body">
+              <div class="text-3xl mb-2">🔍</div>
+              <h4 class="card-title text-lg">枚举</h4>
+              <p class="text-base-content/60 text-sm">遍历所有可能的情况，逐个检查是否满足条件。</p>
+            </div>
+          </div>
+          <div class="card bg-base-100 shadow-sm hover-lift">
+            <div class="card-body">
+              <div class="text-3xl mb-2">⚡</div>
+              <h4 class="card-title text-lg">快速排序</h4>
+              <p class="text-base-content/60 text-sm">将无序数据变为有序，很多问题在有序条件下有更优解。</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 快速排序 -->
+      <article id="qsort" class="mb-10">
+        <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+          <span class="text-primary">2.</span> 快速排序
+        </h3>
+
+        <div class="card bg-base-100 shadow-sm mb-6">
+          <div class="card-body">
+            <h4 class="card-title text-lg mb-4">升序实现</h4>
+            <pre><code class="language-cpp">void Qsort(int A[], int L, int R){
+    if (R < L)		return;                  // 区间内元素个数为0或1，直接递归返回即可
+    int i = L, j = R;
+    int pivot = A[L];
+    while (i < j){
+        while(i < j && A[j] >= pivot)	j--;
+        while(i < j && A[i] <= pivot)	i++;
+        if(i < j)	swap(A[i], A[j]);
+    }
+    swap(A[L], A[i]);
+    Qsort(A, L, i-1);
+    Qsort(A, i+1, R);
+}</code></pre>
+
+            <div class="mt-4">
+              <h4 class="card-title text-lg mb-2">降序变体</h4>
+              <p class="text-sm text-base-content/60 mb-3">只需反转两处比较方向：</p>
+              <pre><code class="language-cpp">while(i < j && A[j] <= pivot)	j--;   // 从右往左找比 pivot 大的
+while(i < j && A[i] >= pivot)	i++;   // 从左往右找比 pivot 小的</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-warning shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+          <div>
+            <span class="font-semibold">使用限制</span>
+            <p class="text-sm">快排不是万能的！以下场景<strong>不能</strong>使用：</p>
+            <ul class="text-sm mt-1 list-disc pl-5">
+              <li>题目明示或暗示<strong>不能改变元素下标</strong>时</li>
+              <li>要求使用<strong>稳定的排序算法</strong>时（快排不稳定）</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-xs text-base-content/40 mt-3 text-center">
+          平均 O(n log n) · 最坏 O(n²) · 空间 O(log n) · 不稳定
+        </p>
+      </article>
+
+      <!-- 优化解法总览 -->
+      <div class="mb-6">
+        <h3 class="text-2xl font-bold mb-6 flex items-center gap-3">
+          <span class="text-primary">3.</span> 优化解法
+        </h3>
+        <p class="text-sm text-base-content/60 mb-6">以下是几种核心的优化思想。</p>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          <div class="card bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border border-blue-200 dark:border-blue-800 shadow-sm">
+            <div class="card-body p-5">
+              <div class="text-2xl mb-1">🔍</div>
+              <h4 class="font-bold">折半查找</h4>
+              <p class="text-xs text-base-content/60 mt-1">时间 O(log n)<br/>空间 O(1)</p>
+              <p class="text-xs text-base-content/50 mt-2">适用：有序顺序表</p>
+            </div>
+          </div>
+          <div class="card bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border border-green-200 dark:border-green-800 shadow-sm">
+            <div class="card-body p-5">
+              <div class="text-2xl mb-1">🗂</div>
+              <h4 class="font-bold">散列表</h4>
+              <p class="text-xs text-base-content/60 mt-1">时间 O(n)<br/>空间 O(m)</p>
+              <p class="text-xs text-base-content/50 mt-2">适用：数据范围有限</p>
+            </div>
+          </div>
+          <div class="card bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border border-purple-200 dark:border-purple-800 shadow-sm">
+            <div class="card-body p-5">
+              <div class="text-2xl mb-1">📊</div>
+              <h4 class="font-bold">预处理</h4>
+              <p class="text-xs text-base-content/60 mt-1">预处理 O(n)<br/>查询 O(1)</p>
+              <p class="text-xs text-base-content/50 mt-2">适用：频繁区间查询</p>
+            </div>
+          </div>
+          <div class="card bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border border-orange-200 dark:border-orange-800 shadow-sm">
+            <div class="card-body p-5">
+              <div class="text-2xl mb-1">👉</div>
+              <h4 class="font-bold">多指针法</h4>
+              <p class="text-xs text-base-content/60 mt-1">时间视情况<br/>空间 O(1)</p>
+              <p class="text-xs text-base-content/50 mt-2">适用：有序线性表</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.1 折半查找 -->
+      <article id="binary-search" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h4 class="card-title text-xl mb-1">
+            <span class="badge badge-primary badge-sm mr-2">3.1</span> 折半查找
+          </h4>
+          <p class="text-sm text-base-content/50 mb-2">核心要素：有序顺序表 &nbsp;|&nbsp; 时间 O(log n) &nbsp;|&nbsp; 空间 O(1)</p>
+          <p class="text-sm text-base-content/60 mb-6">有两种模板。</p>
+
+          <!-- 模板一 -->
+          <div class="mb-6">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="badge badge-primary badge-sm">模板一</span>
+              <span class="font-semibold text-sm">标准二分查找</span>
+            </div>
+            <p class="text-sm text-base-content/60 mb-3">经典「缩小区间」模式，判断条件为 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">while (L &lt;= R)</code>：</p>
+            <pre><code class="language-cpp">int B_Search(int A[], int L, int R, int x){
+    int mid;
+    while(L <= R){                       // 只要区间不为空就继续
+        mid = (L + R) / 2;
+        if(A[mid] == x){
+            return mid;                  // 查找成功
+        }
+        else if (A[mid] > x){
+            R = mid - 1;
+        }
+        else    L = mid + 1;
+    }
+    return -1;                           // 查找失败
+}</code></pre>
+          </div>
+
+          <!-- 模板二 -->
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <span class="badge badge-secondary badge-sm">模板二</span>
+              <span class="font-semibold text-sm">边界查找</span>
+            </div>
+            <p class="text-sm text-base-content/60 mb-3">
+              通过不断收敛区间来锁定一个边界，判断条件为 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">while (L &lt; R)</code>：
+            </p>
+            <pre><code class="language-cpp">int B_Search(int A[], int L, int R, int x){
+    int mid;
+    while(L < R){                        // 缩小区间直到只有一个元素
+        mid = (L + R) / 2;
+        if (A[mid] >= x)	R = mid;     // 第一个符合条件的元素的下标在 L~mid
+        else    L = mid + 1;             // 第一个符合条件的元素的下标在 mid+1~R
+    }
+    return L;                            // 可能成功也可能失败，需额外判断
+}</code></pre>
+          </div>
+
+          <div class="bg-base-200 rounded-xl p-4 mt-4">
+            <p class="text-sm font-semibold mb-1">🎯 模板二适用场景</p>
+            <p class="text-sm text-base-content/60">
+              在升序数组中查找<strong>第一个等于 x</strong> 的元素（数组中可能存在多个 x）。<br/>
+              找到位置 pos 后，需额外判断：<code class="text-xs bg-base-300 px-1.5 py-0.5 rounded">return (A[pos] == x) ? pos : -1;</code>
+            </p>
+          </div>
+
+          <!-- P31: rId5 在模板介绍之后 -->
+          <div class="img-card mt-4 text-center">
+            <img src="./算法题_images/word/media/rId5.png" alt="二分查找示意图" class="inline-block max-w-full" />
+          </div>
+        </div>
+      </article>
+
+      <!-- 3.2 散列表 -->
+      <article id="hash" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h4 class="card-title text-xl mb-1">
+            <span class="badge badge-accent badge-sm mr-2">3.2</span> 散列表
+          </h4>
+          <p class="text-sm text-base-content/50 mb-6">使用条件：数据范围有限 &nbsp;|&nbsp; 时间 O(n) &nbsp;|&nbsp; 空间 O(m)</p>
+
+          <div class="space-y-4">
+            <div>
+              <span class="badge badge-accent badge-sm mb-2">核心思想</span>
+              <p class="text-sm">以<strong>空间换时间</strong>，创建辅助数组 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">count[]</code>，<code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">count[i]</code> 用于记录数值 i 出现的相关信息（如次数、是否出现等）。</p>
+            </div>
+
+            <div class="bg-base-200 rounded-xl p-4">
+              <p class="text-sm font-semibold mb-2">🎯 什么时候用？</p>
+              <p class="text-sm text-base-content/60">
+                题目明示或通过分析确定<strong>元素值的范围</strong>时——例如元素值为 <code class="text-xs bg-base-300 px-1.5 py-0.5 rounded">0 ~ n-1</code>，或元素绝对值 &lt; n ——马上考虑散列表。
+              </p>
+            </div>
+
+            <div class="alert alert-warning shadow-sm">
+              <span class="text-sm">
+                ⚠️ <strong>注意：</strong>必须确保 A[i] 不超出 count 下标范围；新建辅助数组后<strong>一定初始化</strong>！
+              </span>
+            </div>
+
+            <!-- P70: rId6 在散列表注意事项之后 -->
+            <div class="img-card text-center">
+              <img src="./算法题_images/word/media/rId6.png" alt="散列表示意图" class="inline-block max-w-full" />
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3.3 预处理 -->
+      <article id="preprocess" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h4 class="card-title text-xl mb-1">
+            <span class="badge badge-warning badge-sm mr-2">3.3</span> 预处理
+            <span class="badge badge-error badge-sm">重难点</span>
+          </h4>
+          <p class="text-sm text-base-content/50 mb-6">使用条件：频繁区间查询 &nbsp;|&nbsp; 预处理 O(n) &nbsp;|&nbsp; 查询 O(1)</p>
+
+          <!-- 前缀和 -->
+          <div class="mb-8">
+            <h5 class="font-bold text-lg mb-3 flex items-center gap-2">
+              <span class="text-purple-500 text-xl">⊕</span> 前缀和
+            </h5>
+            <p class="text-sm text-base-content/60 mb-4">
+              多次查询不同区间的和时，用 O(n) 时间预处理出前缀和数组 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">sum[]</code>，后续每次查询仅需 O(1)。
+            </p>
+
+            <div class="bg-base-200 rounded-xl p-4 mb-4">
+              <p class="text-sm font-semibold mb-2">预处理过程（sum[i] = 前 i 个元素的和，下标范围 0 ~ i-1）</p>
+              <pre class="text-sm !bg-transparent !p-0"><code>sum[0] = 0
+sum[1] = A[0]
+sum[2] = A[0] + A[1] = sum[1] + A[1]
+sum[3] = A[0] + A[1] + A[2] = sum[2] + A[2]
+...</code></pre>
+            </div>
+
+            <div class="bg-primary/5 border border-primary/20 rounded-xl p-4">
+              <p class="text-sm font-semibold text-primary mb-1">📐 关键公式</p>
+              <p class="text-sm">区间 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">[L, R]</code> 的所有元素之和 = <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded font-bold">sum[R + 1] – sum[L]</code></p>
+            </div>
+
+            <!-- 前缀和示例——来自 rId7, rId8 -->
+            <p class="text-sm text-base-content/60 mt-4 mb-3">
+              <strong>📌 例（P2-6）：</strong>给定含 n 个整数的数组 A，求所有可能的连续子数组的和的最大值。例：n=4, A={1, -2, 3, 5}。
+            </p>
+            <p class="text-xs text-base-content/50 mb-3">
+              枚举所有子数组：{1}→1, {-2}→-2, {3}→3, {5}→5；{1,-2}→-1, {-2,3}→1, {3,5}→8；{1,-2,3}→2, {-2,3,5}→6；{1,-2,3,5}→7。res 数组为 {5, 8, 6, 7}。
+            </p>
+            <div class="bg-base-200 rounded-xl p-4">
+              <pre><code class="language-cpp">void ans(int A[], int n) {
+    // 定义结果数组并初始化
+    int res[n];
+    for (int i = 0; i < n; i++)
+        res[i] = INT_MIN;
+    // 定义前缀和数组
+    int sum[n + 1] = {0};
+    for (int i = 1; i <= n; i++)
+        sum[i] = sum[i-1] + A[i-1];
+    // 枚举所有区间 [i, j] 并更新
+    for (int i = 0; i < n; i++)
+        for (int j = i; j < n; j++) {
+            int temp = sum[j+1] - sum[i];
+            if (temp > res[j-i])
+                res[j-i] = temp;
+        }
+    // 输出 res 数组
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- 区间最值 -->
+          <div>
+            <h5 class="font-bold text-lg mb-3 flex items-center gap-2">
+              <span class="text-amber-500 text-xl">↗</span> 区间最值
+            </h5>
+            <p class="text-sm text-base-content/60 mb-4">
+              频繁查询区间最大/最小值时，提前维护前缀最值数组。
+            </p>
+
+            <!-- rId9 问题描述 -->
+            <p class="text-sm text-base-content/60 mb-3">
+              <strong>📌 例（P2-7）：</strong>给定数组 A，对于每个 j，定义 res[j] = A[0~j] 的最大值 × A[j]。如 A = {3, 1, 2, 7, 6}，则 res = {9, 3, 6, 49, 42}。
+            </p>
+
+            <div class="bg-base-200 rounded-xl p-4 mb-4">
+              <ul class="text-sm space-y-2">
+                <li>设置数组 B，<code class="text-xs bg-base-300 px-1.5 py-0.5 rounded">B[i]</code> 表示 i 下标及之前元素（A[0 ~ i]，共 i+1 个元素）的最值</li>
+              </ul>
+            </div>
+
+            <!-- rId10 代码 -->
+            <div class="bg-base-200 rounded-xl p-4">
+              <pre><code class="language-cpp">void ans(int A[], int n) {
+    int res[n], B[n];
+    B[0] = INT_MIN;
+    for (int i = 0; i < n; i++)
+        B[i] = max(B[i-1], A[i]);
+    for (int j = 0; j < n; j++)
+        res[j] = B[j] * A[j];
+    // 输出 res 数组
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3.4 多指针法 -->
+      <article id="two-pointers" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h4 class="card-title text-xl mb-1">
+            <span class="badge badge-info badge-sm mr-2">3.4</span> 多指针法
+          </h4>
+          <p class="text-sm text-base-content/50 mb-6">使用条件：线性表（顺序表、链表），主要是有序线性表 &nbsp;|&nbsp; 时间视情况 &nbsp;|&nbsp; 空间 O(1)</p>
+
+          <div class="bg-base-200 rounded-xl p-4 mb-6">
+            <p class="text-sm font-semibold mb-2">核心思想</p>
+            <p class="text-sm text-base-content/60">
+              在一个或多个线性表上设置<strong>两个或多个下标变量（指针）</strong>，按照特定规则移动它们。<br/>
+              ⭐ <strong>「特定规则」就是双指针法的灵魂。</strong>
+            </p>
+          </div>
+
+          <div class="overflow-x-auto mb-6">
+            <table class="table table-sm">
+              <thead>
+                <tr><th class="text-xs">要点</th><th class="text-xs">说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="badge badge-primary badge-xs">①</span> 起始位置</td><td class="text-sm">从哪里开始</td></tr>
+                <tr><td><span class="badge badge-primary badge-xs">②</span> 移动规则</td><td class="text-sm">什么条件下谁移动</td></tr>
+                <tr><td><span class="badge badge-primary badge-xs">③</span> 停止处理</td><td class="text-sm">何时结束 &amp; 收尾工作</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="text-sm text-base-content/60 mb-4">适用情形：</p>
+          <ul class="text-sm list-disc pl-6 text-base-content/60 mb-6 space-y-1">
+            <li><strong>多个线性表</strong>：每个线性表设置一个指针，如合并多个有序线性表</li>
+            <li><strong>单个线性表</strong>：一个线性表中设置两个指针，如一前一后/一快一慢，用于查找或调整元素顺序</li>
+          </ul>
+          <p class="text-sm text-base-content/60 mb-6">经典应用：合并多个有序线性表、寻找第 k 个元素、归并排序等。</p>
+
+          <!-- 情形一：多个线性表 -->
+          <div class="mb-8">
+            <h5 class="font-bold text-lg mb-4">情形一：多个线性表</h5>
+
+            <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5 mb-4">
+              <p class="font-semibold text-sm mb-3">📌 例 1.1：合并两个升序数组</p>
+              <p class="text-sm text-base-content/60 mb-3">给定升序数组 A（长度 n）和 B（长度 m），合并成新的升序数组 C 并输出。</p>
+              <div class="overflow-x-auto">
+                <table class="table table-xs">
+                  <thead><tr><th class="text-xs">要点</th><th class="text-xs">规则</th></tr></thead>
+                  <tbody>
+                    <tr><td class="text-sm">起始位置</td><td class="text-sm">A、B、C 的指针均从左向右</td></tr>
+                    <tr><td class="text-sm">移动规则</td><td class="text-sm">比较 A[pA] 和 B[pB]，较小的放入 C，对应指针和 pC 各移一位</td></tr>
+                    <tr><td class="text-sm">停止处理</td><td class="text-sm">一方越界即退出；另一数组剩余部分直接追加到 C 末尾</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+              <p class="font-semibold text-sm mb-3">📌 例 1.2：平方后降序合并</p>
+              <p class="text-sm text-base-content/60 mb-3">
+                A 全是负整数（升序），B 全是非负整数（升序）。所有元素平方后按<strong>降序</strong>排序。
+              </p>
+              <div class="bg-base-200 rounded-lg p-3 mb-3">
+                <p class="text-sm"><code>A = {-4, -2}</code> &nbsp; <code>B = {0, 1, 3}</code> &nbsp;→&nbsp; <code>C = {16, 9, 4, 1, 0}</code></p>
+              </div>
+
+              <p class="text-sm font-semibold mb-2">分析：</p>
+              <div class="overflow-x-auto mb-3">
+                <table class="table table-xs">
+                  <thead><tr><th class="text-xs">数组</th><th class="text-xs">原特征</th><th class="text-xs">平方后</th><th class="text-xs">最大值位置</th></tr></thead>
+                  <tbody>
+                    <tr><td class="text-sm">A</td><td class="text-sm">负整数升序 → 绝对值降序</td><td class="text-sm"><strong>降序</strong></td><td class="text-sm"><code>A[0]</code></td></tr>
+                    <tr><td class="text-sm">B</td><td class="text-sm">非负整数升序 → 绝对值升序</td><td class="text-sm"><strong>升序</strong></td><td class="text-sm"><code>B[m-1]</code></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p class="text-sm font-semibold mb-2">指针策略：</p>
+              <p class="text-sm text-base-content/60">
+                起始：<strong>pA</strong> 从左向右 → &nbsp;|&nbsp; <strong>pB</strong> 从右向左 ← &nbsp;|&nbsp; <strong>pC</strong> 从左向右 →<br/>
+                移动：比较 A[pA] 和 B[pB] 的<strong>绝对值</strong>，较大者的平方放入 C，对应指针移动
+              </p>
+            </div>
+          </div>
+
+          <!-- 情形二：单个有序顺序表 -->
+          <div class="mb-8">
+            <h5 class="font-bold text-lg mb-4">情形二：单个有序顺序表</h5>
+            <p class="text-sm text-base-content/60 mb-4">
+              将单一的表看作从某个「切点」分成的<strong>两个逻辑上的有序子序列</strong>，指针分别放在各子序列的端点，然后像处理多个有序表一样操作。
+            </p>
+            <div class="bg-base-200 rounded-xl p-4 mb-4">
+              <p class="text-sm">
+                🎯 <strong>首尾双指针（相向而行）</strong>就是这种思想的体现——首尾指针最终会在中间相遇。
+              </p>
+            </div>
+
+            <!-- e.g.2.1：首尾双指针典型例题 (rId11, rId12) -->
+            <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5 mt-4">
+              <p class="font-semibold text-sm mb-3">📌 e.g.2.1（P2-8）：平方后降序排列</p>
+              <p class="text-sm text-base-content/60 mb-3">
+                含有绝对值的升序数组（如 A={-4, -2, 0, 1, 3}），将所有元素平方后按<strong>降序</strong>排列，存入新数组 B。
+              </p>
+              <div class="bg-base-200 rounded-lg p-3 mb-3">
+                <p class="text-sm">A = {-4, -2, 0, 1, 3} &nbsp;→&nbsp; B = {16, 9, 4, 1, 0}</p>
+              </div>
+              <p class="text-sm text-base-content/60 mb-3">
+                <strong>思路：</strong>设置指针 i 在 A[0]（绝对值最大端），j 在 A[n-1]（绝对值最小端），k 从 B[0] 开始。比较 |A[i]| 与 |A[j]|，较大者的平方放入 B[k]，移动对应指针和 k。当一方越界时退出，另一方剩余元素直接追加。
+              </p>
+              <div class="overflow-x-auto mt-3">
+                <table class="table table-xs">
+                  <thead><tr><th class="text-xs">要点</th><th class="text-xs">规则</th></tr></thead>
+                  <tbody>
+                    <tr><td class="text-sm">起始位置</td><td class="text-sm">i = 0（最左），j = n-1（最右），k = 0</td></tr>
+                    <tr><td class="text-sm">移动规则</td><td class="text-sm">比较 |A[i]| 与 |A[j]| → 较大者的平方放入 B[k]，对应的 i 或 j 移动，k++</td></tr>
+                    <tr><td class="text-sm">停止处理</td><td class="text-sm">i &gt; j 时退出，剩余元素依次平方追加到 B 末尾</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 情形三：单个无序顺序表 -->
+          <div>
+            <h5 class="font-bold text-lg mb-4">情形三：单个无序顺序表</h5>
+            <p class="text-sm text-base-content/60 mb-4">
+              无序情况下的多指针法稍复杂，考频较低。主要用于 <strong>Partition（划分）</strong> 操作，实际上就是<strong>快速排序的一趟划分</strong>。
+            </p>
+
+            <!-- rId13 问题描述 -->
+            <p class="text-sm text-base-content/60 mb-3">
+              <strong>📌 例（P2-9）：</strong>含 n 个整数的数组 A，以 A[0] 为基准，划分使得左侧全小于 pivot，右侧全大于 pivot。A[0] 不一定是最终位置。如 A={2,5,3,-1,-2} 划分后可能为 {-2,-1,2,3,5} 或 {-1,-2,2,3,5} 等。
+            </p>
+
+            <!-- rId14 代码 -->
+            <pre class="mb-4"><code class="language-cpp">void ans(int A[], int n) {
+    int i = 0, j = n - 1;
+    int pivot = A[0];                // 选第一个元素为基准
+    while (i < j) {
+        while (i < j && A[j] >= pivot)  j--;   // A[j] &lt; pivot 时停
+        while (i < j && A[i] <= pivot)  i++;   // A[i] &gt; pivot 时停
+        if (i < j)  swap(A[i], A[j]);          // 交换逆序对
+    }
+    swap(A[0], A[i]);                // 基准归位
+}</code></pre>
+
+            <!-- rId15-rId18：快速选择 vs 快速排序 -->
+            <div class="bg-base-200 rounded-xl p-4 mb-4">
+              <p class="text-sm font-semibold mb-2">扩展：快速排序 vs 快速选择（Quick Select）</p>
+              <div class="overflow-x-auto">
+                <table class="table table-xs">
+                  <thead><tr><th class="text-xs"></th><th class="text-xs">快速排序</th><th class="text-xs">快速选择</th></tr></thead>
+                  <tbody>
+                    <tr><td class="text-sm font-semibold">目的</td><td class="text-sm">整个数组有序</td><td class="text-sm">找第 k 小的元素</td></tr>
+                    <tr><td class="text-sm font-semibold">递归</td><td class="text-sm">两边都递归</td><td class="text-sm">只递归包含 k 的那一边</td></tr>
+                    <tr><td class="text-sm font-semibold">复杂度</td><td class="text-sm">T(n)=2T(n/2)+O(n) → O(n log n)</td><td class="text-sm">T(n)=T(n/2)+O(n) → O(n)</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-xs text-base-content/50 mt-3">
+                核心技巧：选取 pivot 时尽量接近 n/2 位置，从而在期望 O(n) 时间内找到第 k 小元素。注意区分"以 A[0] 为基准划分"（P2-9）和"快速选择算法"（P2-10）。
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 第二部分：链表 -->
+    <!-- ============================================================ -->
+    <section id="linked-list" class="animate-fade-up delay-3">
+      <h2 class="text-3xl font-bold mb-8 flex items-center gap-3 border-b border-base-300 pb-4">
+        <span class="w-12 h-12 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl">二</span>
+        链表
+      </h2>
+
+      <!-- 1. 链表与顺序表的比较 -->
+      <article id="ll-compare" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h3 class="card-title text-xl mb-4">
+            <span class="badge badge-secondary badge-sm mr-2">1.</span> 链表与顺序表的比较
+          </h3>
+
+          <div class="overflow-x-auto mb-4">
+            <table class="table table-sm">
+              <thead>
+                <tr><th class="text-sm"></th><th class="text-sm">共同点</th><th class="text-sm">不同点</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-sm font-semibold">结论</td>
+                  <td class="text-sm">都是线性表。顺序表的很多方法在链表中仍然可以使用：<strong>散列表、多指针法、预处理</strong>（主要前两者）</td>
+                  <td class="text-sm">链表<strong>不可随机访问</strong>，快排、折半查找不能用；单链表只能<strong>单向访问</strong>，需要掌握<strong>快慢指针、头插法</strong>等技巧</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="bg-base-200 rounded-xl p-4 mb-4">
+            <p class="text-sm font-semibold mb-2">📋 做题推荐流程</p>
+            <div class="flex items-center gap-2 text-sm">
+              <span class="badge badge-neutral">暴力解法</span>
+              <span>→</span>
+              <span class="badge badge-primary">判断能否优化</span>
+              <span>→</span>
+              <span class="badge badge-success">优化解</span>
+            </div>
+          </div>
+
+          <div class="alert alert-info shadow-sm mb-4">
+            <span class="text-sm">💡 对链表，当算法时间复杂度 O(n log n) 以上时，则可以优化。否则不需要。</span>
+          </div>
+
+          <div class="alert alert-warning shadow-sm">
+            <span class="text-sm">
+              ⚠️ <strong>注意：</strong>若题目要求空间 O(1)，则不能开辟新数组（无法将链表用数组保存后处理）；若要求不可修改链表结构，则不能随意对链表元素顺序进行修改以及插入和删除。
+            </span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 2. 链表的定义 -->
+      <article id="ll-def" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h3 class="card-title text-xl mb-4">
+            <span class="badge badge-secondary badge-sm mr-2">2.</span> 链表的定义
+          </h3>
+
+          <div class="grid sm:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-bold mb-3 flex items-center gap-2">
+                <span class="text-blue-500">🔗</span> 单链表
+              </h4>
+              <p class="text-xs text-base-content/50 mb-3">data 为结点权值（一般可定义成 int），next 指向下一个结点</p>
+              <pre><code class="language-cpp">typedef struct LNode{
+    ElemType data;                // 该结点的权值
+    struct LNode *next;           // next 指向下一个结点
+};</code></pre>
+            </div>
+
+            <div>
+              <h4 class="font-bold mb-3 flex items-center gap-2">
+                <span class="text-green-500">🔗🔗</span> 双链表
+              </h4>
+              <p class="text-xs text-base-content/50 mb-3">prior 指向上一个结点，next 指向下一个</p>
+              <pre><code class="language-cpp">typedef struct LNode{
+    ElemType data;                // 该结点的权值
+    struct LNode *prior, *next;   // prior 指向上一个结点
+};</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3. 链表的基本操作 -->
+      <article id="ll-basic" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h3 class="card-title text-xl mb-4">
+            <span class="badge badge-secondary badge-sm mr-2">3.</span> 链表的基本操作
+          </h3>
+
+          <!-- 3.1 删除 -->
+          <div class="mb-8">
+            <h4 class="font-bold text-lg mb-2">1. 删除结点 p</h4>
+            <p class="text-sm text-base-content/60 mb-3">
+              删除时注意两个问题：① 删除操作不要导致断链；② 要能找到下一次待处理的结点（p 要更新所指结点）。
+            </p>
+            <pre><code class="language-cpp">pre->next = p->next;             // 将 pre 的 next 域指向 p 的下一个结点
+p = p->next;                     // 将 p 指向 p 的下一个结点</code></pre>
+            <p class="text-sm text-base-content/60 mt-3 mb-3">
+              删除时还需考虑<strong>释放结点所占内存</strong>（C 语言调用 free(p)），考试中为了方便不写也没关系。
+            </p>
+            <div class="bg-base-200 rounded-xl p-3 mb-3">
+              <p class="text-xs font-semibold mb-1">加上 free 的写法：</p>
+              <pre><code class="language-cpp">pre->next = p->next;
+LNode* temp = p;
+p = p->next;
+free(temp);</code></pre>
+            </div>
+            <!-- P153: rId19 删除操作 -->
+            <div class="img-card mt-3 text-center">
+              <img src="./算法题_images/word/media/rId19.png" alt="删除结点示意图" class="inline-block max-w-full" />
+            </div>
+          </div>
+
+          <!-- 3.2 插入 -->
+          <div class="mb-8">
+            <h4 class="font-bold text-lg mb-2">2. 将 p 插入 pre 后面</h4>
+            <p class="text-sm text-base-content/60 mb-3">⚠️ <strong>先后再前</strong>，这样一定不会断链！</p>
+            <pre><code class="language-cpp">p->next = pre->next;             // 先处理 p 的 next
+pre->next = p;                   // 后处理 pre 的 next</code></pre>
+            <p class="text-sm text-base-content/60 mt-3">
+              先修改 pre 的 next 可能会找不到 pre 的下一个结点。
+            </p>
+            <!-- P170: rId20 插入操作 -->
+            <div class="img-card mt-3 text-center">
+              <img src="./算法题_images/word/media/rId20.png" alt="插入结点示意图" class="inline-block max-w-full" />
+            </div>
+          </div>
+
+          <!-- 3.3 尾插法和头插法 -->
+          <div class="mb-8">
+            <h4 class="font-bold text-lg mb-2">3. 尾插法和头插法</h4>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <p class="font-semibold text-sm mb-2">📥 尾插法</p>
+                <p class="text-sm text-base-content/60 mb-3">
+                  需要保证<strong>插入顺序与最终顺序一致</strong>时使用。设置 tail 指针始终指向链表末尾。核心三行：
+                </p>
+                <pre><code class="language-cpp">p->next = NULL;                    // ① 将新结点的 next 置为 NULL
+tail->next = p;                    // ② 将 tail 的 next 指向 p
+tail = p;                          // ③ 更新 tail 为 p</code></pre>
+                <!-- P173: rId21 尾插法示意图 -->
+                <div class="img-card mt-3">
+                  <img src="./算法题_images/word/media/rId21.png" alt="尾插法示意图" />
+                </div>
+              </div>
+
+              <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-4">
+                <p class="font-semibold text-sm mb-2">📤 头插法</p>
+                <p class="text-sm text-base-content/60 mb-3">
+                  想让<strong>插入顺序与最终顺序相反</strong>时使用。将结点插入到头结点和第一个数据结点之间，常用于<strong>链表逆置</strong>。
+                </p>
+                <pre><code class="language-cpp">void Head_Insert(Node* L, Node* p) {
+    p->next = L->next;               // 先连后
+    L->next = p;                     // 再连前
+}</code></pre>
+                <!-- P176: rId22 头插法示意图 -->
+                <div class="img-card mt-3">
+                  <img src="./算法题_images/word/media/rId22.png" alt="头插法示意图" />
+                </div>
+              </div>
+            </div>
+
+            <div class="alert alert-success shadow-sm mt-4">
+              <span class="text-sm">✅ <strong>口诀：</strong>所有单链表插入都应该<strong>先连后，再连前</strong>。这样一定不会断链。</span>
+            </div>
+          </div>
+
+          <!-- 3.4 遍历链表 (rId23-rId26) -->
+          <div>
+            <h4 class="font-bold text-lg mb-2">4. 遍历链表</h4>
+            <p class="text-sm text-base-content/60 mb-3">
+              若表中元素确定就用 <strong>for 循环</strong>，否则用 <strong>while 循环</strong>。遍历中访问指针 p 每次都要后移（<code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">p = p->next</code>）。链表一般是<strong>带头结点</strong>的，因此从 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">L->next</code> 开始。
+            </p>
+
+            <div class="grid sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <p class="text-xs font-semibold mb-2">已知长度 n，for 循环：</p>
+                <pre><code class="language-cpp">Node* p = L->next;
+for (int i = 0; i < n; i++) {
+    visit(p);                       // 访问 p 结点
+    p = p->next;
+}</code></pre>
+              </div>
+              <div>
+                <p class="text-xs font-semibold mb-2">未知长度，while 循环：</p>
+                <pre><code class="language-cpp">Node* p = L->next;
+while (p != NULL) {
+    visit(p);                       // 访问 p 结点
+    p = p->next;
+}</code></pre>
+              </div>
+            </div>
+
+            <p class="text-sm text-base-content/60 mb-3">
+              遍历同时还可以<strong>统计元素个数 n</strong>：
+            </p>
+            <pre class="mb-4"><code class="language-cpp">Node* p = L->next;
+int n = 0;
+while (p != NULL) {
+    n++;
+    visit(p);                       // 访问 p 结点
+    p = p->next;
+}</code></pre>
+
+            <div class="alert alert-info shadow-sm">
+              <span class="text-sm">
+                💡 <strong>简洁写法：</strong>若只遍历不统计，可用 for 循环一行搞定：<code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">for (Node* p = L->next; p != NULL; p = p->next) visit(p);</code>
+              </span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 4. 链表的暴力解 (rId27-rId31) -->
+      <article id="ll-brute" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h3 class="card-title text-xl mb-4">
+            <span class="badge badge-secondary badge-sm mr-2">4.</span> 链表的两种暴力解
+          </h3>
+
+          <div class="grid sm:grid-cols-2 gap-4 mb-6">
+            <div class="card bg-base-200/50">
+              <div class="card-body p-4">
+                <div class="text-2xl mb-2">1️⃣</div>
+                <h4 class="font-bold text-sm mb-2">枚举法，直接处理</h4>
+                <p class="text-xs text-base-content/60">
+                  例如要改变链表元素顺序，可将需重排的元素<strong>一个一个拆下来重新插入</strong>。空间复杂度 O(1)。
+                </p>
+              </div>
+            </div>
+            <div class="card bg-base-200/50">
+              <div class="card-body p-4">
+                <div class="text-2xl mb-2">2️⃣</div>
+                <h4 class="font-bold text-sm mb-2">链表转数组，再处理</h4>
+                <p class="text-xs text-base-content/60">
+                  使用数组保存链表中的数据值，再按照<strong>数组的做题方法</strong>处理。需要额外 O(n) 空间。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 例题 -->
+          <p class="text-sm font-semibold mb-3">📌 例题：将链表 L 按照升序重新排序，结点结构为 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">data</code> | <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">next</code>（带头结点单链表）</p>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <!-- 暴力解1 (rId29) -->
+            <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <p class="font-bold text-sm mb-2">暴力解 1：逐个拆下重插</p>
+              <pre><code class="language-cpp">// 在有序链表中找到 p 的插入位置并插入
+void Find_Insert(ListNode *pre, ListNode *p) {
+    while (pre->next!=NULL && pre->next->data < p->data)
+        pre = pre->next;
+    p->next = pre->next;
+    pre->next = p;
+}
+Node* ans(Node *L) {
+    Node *p = L->next;
+    L->next = NULL;
+    while (p != NULL) {
+        Node *temp = p->next;        // 暂存下一个
+        Find_Insert(L, p);           // 将 p 插入到 L 中
+        p = temp;                    // 处理下一个
+    }
+    return L;
+}</code></pre>
+            </div>
+
+            <!-- 暴力解2 (rId30, rId31) -->
+            <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-4">
+              <p class="font-bold text-sm mb-2">暴力解 2：转数组排序</p>
+              <pre><code class="language-cpp">void Qsort(int A[], int L, int R) {
+    if (L >= R) return;
+    int pivot, i = L, j = R;
+    pivot = A[L];
+    while (i < j) {
+        while (i < j && A[j] >= pivot) j--;
+        while (i < j && A[i] <= pivot) i++;
+        if (i < j) swap(A[i], A[j]);
+    }
+    swap(A[L], A[i]);
+    Qsort(A, L, i-1);
+    Qsort(A, i+1, R);
+}
+Node* ans(Node *L) {
+    int a[maxn], n = 0;
+    Node *p = L->next;
+    while (p != NULL) {              // 遍历保存到数组
+        a[n] = p->data;  n++;
+        p = p->next;
+    }
+    Qsort(a, 0, n-1);                // 数组排序
+    p = L->next;
+    for (int i = 0; i < n; i++) {    // 写回链表
+        p->data = a[i];
+        p = p->next;
+    }
+    return L;
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 5. 链表的优化解 -->
+      <article id="ll-optimize" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h3 class="card-title text-xl mb-4">
+            <span class="badge badge-secondary badge-sm mr-2">5.</span> 链表的优化解
+          </h3>
+
+          <!-- 5.1 多指针法 -->
+          <div class="mb-8">
+            <h4 class="font-bold text-lg mb-3">1. 多指针法</h4>
+            <p class="text-sm text-base-content/60 mb-4">
+              顺序表中多指针法有三种情形，但单链表<strong>只能从前往后访问</strong>，因此只考虑第一种（多个有序链表）。此外，链表自身有特殊用法：<strong>快慢指针、前后指针</strong>。
+            </p>
+
+            <!-- ① 多个有序链表 (rId32, rId33) -->
+            <div class="mb-6 bg-base-200/50 rounded-xl p-5">
+              <h5 class="font-bold mb-3">① 多个有序链表</h5>
+              <p class="text-sm text-base-content/60 mb-3">归并两个带头结点的升序链表，代码如下：</p>
+              <pre><code class="language-cpp">// 归并两个升序链表
+void Merge(LNode *L1, *L2) {
+    // p 和 q 分别指向两个链表的第一个数据结点
+    LNode *p = L1->next;
+    LNode *q = L2->next;
+    // 新建一个链表 L3，tail 指向其尾结点
+    LNode *L3 = (LNode *)malloc(sizeof(LNode));
+    LNode *tail = L3;
+    // 合并过程，比较并链接
+    while (p != NULL && q != NULL) {
+        if (p->data <= q->data) {
+            tail->next = p;
+            p = p->next;
+        } else {
+            tail->next = q;
+            q = q->next;
+        }
+        tail = tail->next;           // tail 始终指向尾结点
+    }
+    // 处理剩余结点，直接链接到 tail 后面
+    if (p != NULL) tail->next = p;
+    else tail->next = q;
+    // 释放旧头结点，返回新链表
+    free(L1);  free(L2);
+    return L3;
+}</code></pre>
+              <div class="overflow-x-auto mt-3">
+                <table class="table table-xs">
+                  <thead><tr><th class="text-xs">要点</th><th class="text-xs">规则</th></tr></thead>
+                  <tbody>
+                    <tr><td class="text-sm">起始位置</td><td class="text-sm">p = L1->next，q = L2->next（跳过各自头结点）</td></tr>
+                    <tr><td class="text-sm">移动规则</td><td class="text-sm">较小的结点链入 L3，对应指针后移，tail 始终指向尾结点</td></tr>
+                    <tr><td class="text-sm">停止处理</td><td class="text-sm">一方遍历完毕，另一方剩余部分直接链接到 tail 后面</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ② 快慢指针 (rId34, rId35) -->
+            <div class="mb-6 bg-base-200/50 rounded-xl p-5">
+              <h5 class="font-bold mb-3">② 快慢指针</h5>
+              <p class="text-sm text-base-content/60 mb-3">
+                设置两个指针 p 和 q，初始时都指向第 1 个结点，每次 p 后移 1 次，q 后移 2 次。
+              </p>
+
+              <p class="text-sm font-semibold mb-2">判断链表是否有环：</p>
+              <pre><code class="language-cpp">Node *p, *q;
+p = q = L->next;
+while (p != NULL && q != NULL) {
+    p = p->next;                     // p 走 1 步
+    q = q->next;
+    if (q == NULL) break;
+    q = q->next;                     // q 走 2 步
+    if (p == q) { /* 有环 */ }
+}</code></pre>
+
+              <p class="text-sm font-semibold mt-4 mb-2">求链表的中点：</p>
+              <p class="text-xs text-base-content/60 mb-2">
+                q 走到终点时（步长是 p 的 2 倍），p 正好在表的中点。求得中点后可将链表一分为二（用另一个新指针指向 p->next，再令 p->next = NULL）。
+              </p>
+              <pre><code class="language-cpp">Node *p, *q;
+p = q = L->next;
+while (p != NULL && q != NULL) {
+    q = q->next;
+    if (q == NULL || q->next == NULL) break;
+    q = q->next;                     // q 走 2 步
+    p = p->next;                     // p 走 1 步
+    if (p == q) { /* 有环 */ }
+}
+// p 就是 q 的一半（即在中点）</code></pre>
+            </div>
+
+            <!-- ③ 前后指针 (rId36, rId37) -->
+            <div class="bg-base-200/50 rounded-xl p-5">
+              <h5 class="font-bold mb-3">③ 前后指针</h5>
+              <p class="text-sm text-base-content/60 mb-3">
+                因单链表只能按一个方向处理，设置两个指针 p 和 q，初始时 p 指向 L，q 指向第 k 个结点。然后 p 和 q 每次同时后移，始终保持 k 的距离。当 q 指向 NULL 时，p 指向<strong>倒数第 k 个元素</strong>。
+              </p>
+              <p class="text-xs text-base-content/50 mb-3">经典考题：2009 年真题 #15——查找链表中倒数第 k 个结点。</p>
+              <pre><code class="language-cpp">Node *p, *q;
+p = q = L;
+for (int i = 0; i < k; i++)
+    q = q->next;                     // q 先走 k 步
+while (q != NULL) {
+    p = p->next;                     // p、q 同步后移
+    q = q->next;
+}
+// 此时 p 指向倒数第 k 个</code></pre>
+            </div>
+          </div>
+
+          <!-- 5.2 散列表 (rId38, rId39) -->
+          <div>
+            <h4 class="font-bold text-lg mb-3">2. 散列表</h4>
+            <p class="text-sm text-base-content/60 mb-3">
+              和数组中一样，额外定义数组保存中间过程。如 <code class="text-xs bg-base-200 px-1.5 py-0.5 rounded">count[n]</code> 表示权值为 n 的元素出现次数。
+            </p>
+            <p class="text-xs text-base-content/50 mb-3"><strong>例（P2-3）：</strong>n=6, A={1, 2, 5, 2, 4, 3}，用散列表找出重复元素。</p>
+
+            <pre class="mb-3"><code class="language-cpp">// 链表版
+void Hash_Linklist(Node* L) {
+    int count[n] = {0};
+    Node* p = L->next;
+    while (p != NULL) {
+        if (count[p->data] > 0)
+            cout << p->data;         // 输出重复元素
+        count[p->data]++;            // 记录 p->data 出现的次数
+        p = p->next;
+    }
+}
+// 顺序表版（对照）
+void Hash_Sequence(int a[], int n) {
+    int count[n] = {0};
+    for (int i = 0; i < n; i++) {
+        if (count[a[i]] > 0)
+            cout << a[i];            // 输出重复元素
+        count[a[i]]++;               // 记录 a[i] 出现的次数
+    }
+}</code></pre>
+
+            <div class="alert alert-warning shadow-sm">
+              <span class="text-sm">
+                ⚠️ <strong>注意：</strong>使用时必须考虑结点权值是否会<strong>超出 count 下标范围</strong>（如题目暗示"元素值 &lt; n"时方可安全使用）；新建辅助数组<strong>一定要初始化</strong>！
+              </span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 6. 逆置 (rId40, rId41) -->
+      <article id="ll-reverse" class="card bg-base-100 shadow-sm mb-8">
+        <div class="card-body">
+          <h3 class="card-title text-xl mb-4">
+            <span class="badge badge-secondary badge-sm mr-2">6.</span> 逆置
+          </h3>
+          <p class="text-sm text-base-content/60 mb-6">逆置即将线性表反转，顺序完全反过来。</p>
+
+          <div class="grid sm:grid-cols-2 gap-6">
+            <!-- 顺序表逆置 (rId40) -->
+            <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+              <h4 class="font-bold mb-2">📊 顺序表的逆置</h4>
+              <p class="text-sm text-base-content/60 mb-3">
+                首尾元素依次交换：A[0]↔A[n-1]、A[1]↔A[n-2]……<strong>时间 O(n)，空间 O(1)</strong>。
+              </p>
+              <pre><code class="language-cpp">for (int i = 0; i < n/2; i++)
+    swap(A[i], A[n-i-1]);</code></pre>
+            </div>
+
+            <!-- 链表逆置 (rId41) -->
+            <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
+              <h4 class="font-bold mb-2">🔗 链表的逆置</h4>
+              <p class="text-sm text-base-content/60 mb-3">
+                借助<strong>头插法</strong>逐个重新插入（头插法的特点是后插入的先访问，从而实现反转）。
+              </p>
+              <pre><code class="language-cpp">// 头插辅助函数
+ListNode* Head_Insert(ListNode* L, ListNode* p) {
+    ListNode* temp = p->next;        // 暂存 p 的下一个结点
+    p->next = L->next;               // 先连后
+    L->next = p;                     // 再连前
+    return temp;                     // 返回 p 的下一个结点
+}
+void Reverse(ListNode* L) {          // 原地逆置
+    ListNode* p = L->next;
+    L->next = NULL;
+    while (p != NULL)
+        p = Head_Insert(L, p);       // 删 p，头插——重复此过程
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 7. 经典真题 (rId42-rId46) -->
+      <article id="ll-exam" class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h3 class="card-title text-xl mb-4">
+            <span class="badge badge-error badge-sm mr-2">7.</span> 经典真题
+          </h3>
+
+          <!-- 2019年408真题41 -->
+          <div class="bg-base-200 rounded-xl p-5 mb-4">
+            <p class="font-bold text-sm mb-2">📌 2019 年 408 真题 #41（13 分）</p>
+            <p class="text-xs text-base-content/60 mb-3">
+              <strong>题目：</strong>设线性表 L=(a₁, a₂, a₃, …, aₙ₋₁, aₙ) 采用带头结点的单链表保存，链表结点定义如下。请设计一个<strong>空间复杂度 O(1)</strong> 且时间上尽可能高效的算法，重新排列 L 中各结点，得到线性表 L'=(a₁, aₙ, a₂, aₙ₋₁, a₃, aₙ₋₂, …)。
+            </p>
+            <pre><code class="language-cpp">typedef struct node {
+    int data;
+    struct node* next;
+} NODE;</code></pre>
+            <p class="text-xs text-base-content/50 mt-2">要求：(1) 描述算法设计思想；(2) 写出代码；(3) 分析时间复杂度。</p>
+          </div>
+
+          <!-- 解法一：O(n²) -->
+          <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5 mb-4">
+            <p class="font-bold text-sm mb-2">解法一：暴力插入（O(n²) / O(1)）</p>
+            <p class="text-xs text-base-content/60 mb-3">
+              <strong>思想：</strong>① 遍历得长度 n；② 找到第 (n+1)/2 个结点作为中点，断链分为前后两半；③ 依次将后半段的每个结点插入到前半段的对应位置。
+            </p>
+            <pre><code class="language-cpp">void ans(Node* L) {
+    Node *p = L->next;
+    int n = 0;
+    while (p != NULL) { n++; p = p->next; }  // ① 求表长
+
+    // ② 找到后半段的起点，p 先走一半
+    p = L;
+    for (int i = 0; i < (n+1)/2; i++)
+        p = p->next;
+
+    Node *temp = p;
+    p = p->next;
+    temp->next = NULL;                       // 前半段收尾
+
+    // ③ 将后半段结点逐个插入前半段
+    for (int i = 0; i < n/2; i++) {
+        temp = p->next;
+        Node *pre = L;
+        for (int j = 0; j < n/2-i; j++)      // 找插入位置
+            pre = pre->next;
+        p->next = pre->next;
+        pre->next = p;
+        p = temp;                            // p 更新为下一个待处理结点
+    }
+}
+// 时间复杂度：O(n²)</code></pre>
+          </div>
+
+          <!-- 解法二：O(n) -->
+          <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
+            <p class="font-bold text-sm mb-2">解法二：快慢指针 + 逆置 + 合并（O(n) / O(1)）</p>
+            <p class="text-xs text-base-content/60 mb-3">
+              <strong>思想：</strong>① 快慢指针找中点；② 后半段逆置（头插法）；③ 将逆置后的后半段穿插合并到前半段。
+            </p>
+            <pre><code class="language-cpp">// 头插法
+void Head_Insert(Node* L, Node* p) {
+    p->next = L->next;
+    L->next = p;
+}
+
+void ans(Node* L) {
+    // ① 快慢指针找中点
+    Node *p, *q;
+    p = q = L->next;
+    while (p != NULL && q != NULL) {
+        q = q->next;
+        if (q == NULL || q->next == NULL) break;
+        q = q->next;
+        p = p->next;
+    }
+    // 此时 p 在中点，将前后断开
+    Node *temp = p;
+    p = p->next;
+    temp->next = NULL;
+
+    // ② 后半段逆置（头插法）
+    Node *L2 = (Node*)malloc(sizeof(Node));
+    L2->next = NULL;
+    while (p != NULL) {
+        temp = p->next;
+        Head_Insert(L2, p);
+        p = temp;
+    }
+
+    Node *p1 = L->next;
+    Node *p2 = L2->next;
+
+    // ③ 穿插合并
+    while (p2 != NULL) {
+        // p1 和 p2 各取一个结点
+        Node* temp1 = p1->next;
+        Node* temp2 = p2->next;
+        // p2 插入到 p1 之后
+        p2->next = p1->next;
+        p1->next = p2;
+        // 更新 p1 和 p2
+        p1 = temp1;
+        p2 = temp2;
+    }
+}
+// 时间复杂度：O(n)</code></pre>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 总结 -->
+    <!-- ============================================================ -->
+    <section id="summary" class="animate-fade-up delay-5">
+      <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+        <span class="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center text-lg">📋</span>
+        总结速查表
+      </h2>
+
+      <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+        <span class="text-primary">📐</span> 顺序表
+      </h3>
+      <div class="overflow-x-auto mb-8">
+        <table class="table table-zebra bg-base-100 shadow-sm rounded-xl overflow-hidden">
+          <thead>
+            <tr class="bg-base-300">
+              <th class="text-sm">方法</th>
+              <th class="text-sm">适用条件</th>
+              <th class="text-sm">时间</th>
+              <th class="text-sm">空间</th>
+              <th class="text-sm">关键点</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="font-semibold">暴力枚举</span></td><td class="text-sm">无限制</td><td class="text-sm">O(n²) 等</td><td class="text-sm">O(1)</td><td class="text-sm">遍历所有可能</td></tr>
+            <tr><td><span class="font-semibold">快速排序</span></td><td class="text-sm">可改变下标</td><td class="text-sm">O(n log n)</td><td class="text-sm">O(log n)</td><td class="text-sm">不稳定，有使用限制</td></tr>
+            <tr><td><span class="font-semibold">折半查找</span></td><td class="text-sm">有序表</td><td class="text-sm">O(log n)</td><td class="text-sm">O(1)</td><td class="text-sm">两个模板，边界查找用模板二</td></tr>
+            <tr><td><span class="font-semibold">散列表</span></td><td class="text-sm">数据范围有限</td><td class="text-sm">O(n)</td><td class="text-sm">O(m)</td><td class="text-sm">空间换时间，注意初始化</td></tr>
+            <tr><td><span class="font-semibold">预处理</span></td><td class="text-sm">频繁区间查询</td><td class="text-sm">O(n) + O(1)</td><td class="text-sm">O(n)</td><td class="text-sm">前缀和、区间最值</td></tr>
+            <tr><td><span class="font-semibold">多指针法</span></td><td class="text-sm">线性表（有序为主）</td><td class="text-sm">视情况</td><td class="text-sm">O(1)</td><td class="text-sm">灵魂在「移动规则」</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+        <span class="text-secondary">🔗</span> 链表
+      </h3>
+      <div class="overflow-x-auto">
+        <table class="table table-zebra bg-base-100 shadow-sm rounded-xl overflow-hidden">
+          <thead>
+            <tr class="bg-base-300">
+              <th class="text-sm">方法</th>
+              <th class="text-sm">适用条件</th>
+              <th class="text-sm">关键点</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="font-semibold">暴力枚举</span></td><td class="text-sm">无限制</td><td class="text-sm">一个一个拆下重插，或转数组处理</td></tr>
+            <tr><td><span class="font-semibold">多指针法</span></td><td class="text-sm">有序链表为主</td><td class="text-sm">多个有序链表归并 + 快慢指针 + 前后指针</td></tr>
+            <tr><td><span class="font-semibold">散列表</span></td><td class="text-sm">数据范围有限</td><td class="text-sm">同顺序表，注意下标范围</td></tr>
+            <tr><td><span class="font-semibold">逆置</span></td><td class="text-sm">需要反转顺序</td><td class="text-sm">链表用头插法，顺序表用首尾交换</td></tr>
+            <tr><td><span class="font-semibold">头插法/尾插法</span></td><td class="text-sm">插入大量结点</td><td class="text-sm">先连后，再连前。头插逆序，尾插保序</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="text-xs text-base-content/40 text-center mt-6">
+        整理自桌面「算法题.docx」· 2026-08-02 · 考研 408 自学笔记
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="footer footer-center p-10 bg-base-100 text-base-content/50 mt-12">
+    <div>
+      <p class="text-sm">📐 算法题笔记 · 考研 408 数据结构</p>
+      <p class="text-xs">Made with 💻 + ☕ · Tailwind CSS + DaisyUI</p>
+    </div>
+  </footer>
+
+  <button onclick="window.scrollTo({top:0,behavior:'smooth'})"
+          class="btn btn-circle btn-ghost fixed bottom-6 right-6 shadow-lg bg-base-100 z-40"
+          title="回到顶部">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+  </button>
+
+</body>
+</html>
