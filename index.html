@@ -84,19 +84,6 @@
       66% { transform: translate(-1%, 1%) rotate(-1deg); }
     }
 
-    /* 倒计时卡片特殊样式 */
-    .countdown-card {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      position: relative;
-      overflow: hidden;
-    }
-    .countdown-card::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-      pointer-events: none;
-    }
   </style>
 </head>
 
@@ -157,44 +144,29 @@
                   在校大四生 · 考研预备役<br>
                   正在努力上岸中 🏊‍♂️
                 </p>
-                <div class="card-actions justify-end mt-auto">
-                  <a href="https://space.bilibili.com/88719117" target="_blank" class="btn btn-sm rounded-xl border-0 bg-pink-400 hover:bg-pink-500 text-white gap-1.5">
-                    <img src="bilibili-icon.svg" class="w-4 h-4 brightness-0 invert" alt="" /> B站
-                  </a>
-                  <a href="https://www.zhihu.com/people/obsidian-destroyer" target="_blank" class="btn btn-sm rounded-xl border-0 bg-blue-500 hover:bg-blue-600 text-white gap-1.5">
-                    <img src="zhihu-icon.svg" class="w-4 h-4 brightness-0 invert" alt="" /> 知乎
-                  </a>
-                </div>
               </div>
             </div>
 
-            <!-- ---- 考研倒计时卡片 ---- -->
-            <a href="#" class="col-span-4 md:col-span-2 block">
-              <div class="card card-hover rounded-2xl shadow-xl w-full md:h-[10.5rem] lg:w-[26rem] lg:h-[12rem] mb-8
-                          countdown-card text-white border-0
-                          hover:shadow-2xl hover:shadow-blue-500/30">
-                <div class="card-body relative z-10">
-                  <h2 class="card-title text-xl whitespace-nowrap text-white">
-                    ⏳ 考研倒计时
-                  </h2>
-                  <div class="flex items-center gap-4 my-2">
-                    <div class="text-center">
-                      <span class="text-4xl font-black" id="countdown-days">--</span>
-                      <p class="text-xs text-blue-200">天</p>
-                    </div>
-                    <div class="text-3xl text-blue-300">:</div>
-                    <div class="text-center">
-                      <span class="text-3xl font-bold" id="countdown-hours">--</span>
-                      <p class="text-xs text-blue-200">时</p>
-                    </div>
-                    <div class="text-3xl text-blue-300">:</div>
-                    <div class="text-center">
-                      <span class="text-3xl font-bold" id="countdown-mins">--</span>
-                      <p class="text-xs text-blue-200">分</p>
-                    </div>
-                  </div>
-                  <p class="text-sm text-blue-200">距离2026年考研 (12月)</p>
-                </div>
+            <!-- ---- 社交链接块 ---- -->
+            <a href="https://space.bilibili.com/88719117" target="_blank"
+               class="block w-full lg:w-[26rem] mb-3 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+              <div class="flex items-center gap-3 px-5 py-4" style="background: #FB7299;">
+                <img src="bilibili-icon.svg" class="w-5 h-5 brightness-0 invert" alt="" />
+                <span class="text-white font-medium text-sm">B站</span>
+              </div>
+            </a>
+            <a href="https://www.zhihu.com/people/obsidian-destroyer" target="_blank"
+               class="block w-full lg:w-[26rem] mb-3 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+              <div class="flex items-center gap-3 px-5 py-4" style="background: #0066FF;">
+                <img src="zhihu-icon.svg" class="w-5 h-5 brightness-0 invert" alt="" />
+                <span class="text-white font-medium text-sm">知乎</span>
+              </div>
+            </a>
+            <a href="https://www.douyin.com/user/MS4wLjABAAAAe4kFqu1OswORfsBmb7_ASH1yVQywidMBA164JziQKg8Wp7Q9vwlTXFEIz174j3q8?from_tab_name=main" target="_blank"
+               class="block w-full lg:w-[26rem] mb-8 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow">
+              <div class="flex items-center gap-3 px-5 py-4" style="background: #111111;">
+                <img src="douyin-icon.svg" class="w-5 h-5 brightness-0 invert" alt="" />
+                <span class="text-white font-medium text-sm">抖音</span>
               </div>
             </a>
           </div>
@@ -323,32 +295,5 @@
     </div><!-- xl:flex -->
   </div><!-- container -->
 
-  <!-- 考研倒计时脚本 -->
-  <script>
-    function updateCountdown() {
-      // 2026年考研初试通常在12月倒数第二个周末，设为12月20日
-      const examDate = new Date('2026-12-20T08:30:00+08:00');
-      const now = new Date();
-      const diff = examDate - now;
-
-      if (diff <= 0) {
-        document.getElementById('countdown-days').textContent = '00';
-        document.getElementById('countdown-hours').textContent = '00';
-        document.getElementById('countdown-mins').textContent = '00';
-        return;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-      document.getElementById('countdown-days').textContent = String(days).padStart(2, '0');
-      document.getElementById('countdown-hours').textContent = String(hours).padStart(2, '0');
-      document.getElementById('countdown-mins').textContent = String(mins).padStart(2, '0');
-    }
-
-    updateCountdown();
-    setInterval(updateCountdown, 60000); // 每分钟更新
-  </script>
 </body>
 </html>
