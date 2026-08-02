@@ -25,6 +25,10 @@ ocr_results/
 # 算法题笔记markdown（可选保留）
 # 算法题笔记.md
 
+# 工具脚本
+autosync.py
+启动自动同步.bat
+
 # 系统文件
 .DS_Store
 Thumbs.db
