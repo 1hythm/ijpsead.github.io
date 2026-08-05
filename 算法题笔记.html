@@ -1299,9 +1299,6 @@ void ans(Node* L) {
     ElemType data;                  // 该结点的权值
     struct TNode *firstchild, *nextbro;   // firstchild 指向第一个孩子，nextbro 指向下一个兄弟
 }TNode;</code></pre>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image43.png" alt="孩子兄弟表示法" class="inline-block max-w-full" />
-        </div>
       </div>
 
       <div class="bg-base-200 rounded-xl p-5 mb-4">
@@ -1322,12 +1319,6 @@ void ans(Node* L) {
 }TNode;</code></pre>
           </div>
         </div>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image44.png" alt="双亲表示法-数组" class="inline-block max-w-full" />
-        </div>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image45.png" alt="双亲表示法-结构体" class="inline-block max-w-full" />
-        </div>
       </div>
 
       <h4 class="font-bold text-lg mb-3 mt-2">🌳 二叉树</h4>
@@ -1338,9 +1329,6 @@ void ans(Node* L) {
     ElemType data;                   // 该结点的权值
     struct BTNode *lchild, *rchild;  // lchild 指向左孩子，rchild 指向右孩子
 }BTNode;</code></pre>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image46.png" alt="二叉链表" class="inline-block max-w-full" />
-        </div>
       </div>
 
       <div class="bg-base-200 rounded-xl p-5">
@@ -1352,9 +1340,6 @@ void ans(Node* L) {
     int SqBiTNode[MAX_SIZE];   // 一维数组保存二叉树结点
     int ElemNum;               // 结点个数
 }SqBiTree;</code></pre>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image47.png" alt="二叉树顺序存储" class="inline-block max-w-full" />
-        </div>
       </div>
     </div>
   </article>
@@ -1371,38 +1356,33 @@ void ans(Node* L) {
         先、中、后序的递归遍历<strong>时间复杂度 O(n)</strong>，<strong>空间复杂度 O(h)</strong>（n 为总结点数，h 为树高）；若不确定树高，空间复杂度视为 O(n)。
       </p>
 
-      <div class="grid sm:grid-cols-2 gap-4 mb-4">
+      <div class="grid sm:grid-cols-3 gap-4 mb-4">
         <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
           <p class="font-bold text-sm mb-2">先序遍历（根 → 左 → 右）</p>
           <pre><code class="language-cpp">void PreOrder(BTNode *p){
     if (p == NULL) return;
-    visit(p);                 // 先访问根结点
+    visit(p);                // 先访问根
     PreOrder(p->lchild);
     PreOrder(p->rchild);
 }</code></pre>
-          <div class="img-card mt-3 text-center">
-            <img src="./算法题_images/word/media/image48.png" alt="先序遍历" class="inline-block max-w-full" />
-          </div>
         </div>
         <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
-          <p class="font-bold text-sm mb-2">中序 / 后序</p>
-          <pre><code class="language-cpp">// 中序遍历（左 → 根 → 右）
-void InOrder(BTNode *p){
+          <p class="font-bold text-sm mb-2">中序遍历（左 → 根 → 右）</p>
+          <pre><code class="language-cpp">void InOrder(BTNode *p){
     if (p == NULL) return;
     InOrder(p->lchild);
-    visit(p);                 // 中间访问根结点
+    visit(p);                // 中间访问根
     InOrder(p->rchild);
-}
-// 后序遍历（左 → 右 → 根）
-void PostOrder(BTNode *p){
+}</code></pre>
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">后序遍历（左 → 右 → 根）</p>
+          <pre><code class="language-cpp">void PostOrder(BTNode *p){
     if (p == NULL) return;
     PostOrder(p->lchild);
     PostOrder(p->rchild);
-    visit(p);                 // 最后访问根结点
+    visit(p);                // 最后访问根
 }</code></pre>
-          <div class="img-card mt-3 text-center">
-            <img src="./算法题_images/word/media/image49.png" alt="中序与后序遍历" class="inline-block max-w-full" />
-          </div>
         </div>
       </div>
 
@@ -1425,24 +1405,18 @@ void PostOrder(BTNode *p){
           <pre><code class="language-cpp">void TreePreOrder(TNode *T){
     if (T == NULL) return;
     visit(T);                     // 先访问根结点
-    TreePreOrder(T->firstchild);  // 再访问第一个孩子
-    TreePreOrder(T->nextbro);     // 再访问下一个兄弟
+    TreePreOrder(T->firstchild);  // 再遍历第一个孩子的整棵子树
+    TreePreOrder(T->nextbro);     // 最后遍历下一个兄弟的子树
 }</code></pre>
-          <div class="img-card mt-3 text-center">
-            <img src="./算法题_images/word/media/image50.png" alt="先根遍历" class="inline-block max-w-full" />
-          </div>
         </div>
         <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
           <p class="font-bold text-sm mb-2">后根遍历（孩子访问完再访问根）</p>
           <pre><code class="language-cpp">void TreePostOrder(TNode *T){
     if (T == NULL) return;
-    TreePostOrder(T->firstchild);  // 先访问孩子
-    TreePostOrder(T->nextbro);     // 再访问兄弟
-    visit(T);                      // 最后访问根
+    TreePostOrder(T->firstchild);  // 先遍历第一个孩子的整棵子树
+    visit(T);                      // 再访问根结点
+    TreePostOrder(T->nextbro);     // 最后遍历下一个兄弟的子树
 }</code></pre>
-          <div class="img-card mt-3 text-center">
-            <img src="./算法题_images/word/media/image51.png" alt="后根遍历" class="inline-block max-w-full" />
-          </div>
         </div>
       </div>
     </div>
@@ -1468,12 +1442,6 @@ void PostOrder(BTNode *p){
         <p class="text-sm text-base-content/70 mt-3">
           <code class="font-mono">visit(p)</code> 需要<strong>根据题目要求自定义实现</strong>：通过处理当前结点 p，用<strong>全局变量</strong>（累加、计数、状态标记）或<strong>函数返回值</strong>（自底向上传递信息）来统计结果。
         </p>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image52.png" alt="例题4-1~4-6总览" class="inline-block max-w-full" />
-        </div>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image54.png" alt="做题方法框架" class="inline-block max-w-full" />
-        </div>
       </div>
 
       <!-- 例题 4-1 ~ 4-6 -->
@@ -1552,9 +1520,6 @@ void PostOrder(BTNode *p){
             </tbody>
           </table>
         </div>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image55.png" alt="例题总结表" class="inline-block max-w-full" />
-        </div>
       </div>
 
       <!-- WPL：全局变量 vs 函数返回值 -->
@@ -1579,9 +1544,6 @@ void PreOrder(BTNode *p, int depth){ // 传入结点 p，附带深度 depth
     PreOrder(p->lchild, depth+1);    // 递归左子树
     PreOrder(p->rchild, depth+1);    // 递归右子树
 }</code></pre>
-            <div class="img-card mt-3 text-center">
-              <img src="./算法题_images/word/media/image56.png" alt="WPL 全局变量写法" class="inline-block max-w-full" />
-            </div>
           </div>
           <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
             <p class="font-bold text-sm mb-2">② 函数返回值（自底向上传递）</p>
@@ -1598,9 +1560,6 @@ void PreOrder(BTNode *p, int depth){ // 传入结点 p，附带深度 depth
     else
         return L_WPL + R_WPL;        // 返回左右子树 WPL 之和
 }</code></pre>
-            <div class="img-card mt-3 text-center">
-              <img src="./算法题_images/word/media/image57.png" alt="WPL 函数返回值写法" class="inline-block max-w-full" />
-            </div>
           </div>
         </div>
 
@@ -1655,12 +1614,6 @@ void Union(int x, int y){
 }</code></pre>
         </div>
       </div>
-      <div class="img-card mt-1 text-center">
-        <img src="./算法题_images/word/media/image58.png" alt="并查集 father 数组" class="inline-block max-w-full" />
-      </div>
-      <div class="img-card mt-3 text-center">
-        <img src="./算法题_images/word/media/image59.png" alt="并查集 find 与 union 代码" class="inline-block max-w-full" />
-      </div>
 
       <div class="alert alert-info shadow-sm mt-4">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -1688,9 +1641,6 @@ void Union(int x, int y){
           <p class="text-sm text-base-content/70">
             (3) 分析算法的时间复杂度和空间复杂度。
           </p>
-          <div class="img-card mt-3 text-center">
-            <img src="./算法题_images/word/media/image60.png" alt="层次遍历例题题目" class="inline-block max-w-full" />
-          </div>
         </div>
 
         <p class="font-bold text-sm mb-2">💡 思路</p>
@@ -1721,9 +1671,6 @@ void Union(int x, int y){
     }
     return sum;
 }</code></pre>
-        <div class="img-card mt-3 text-center">
-          <img src="./算法题_images/word/media/image61.png" alt="层次遍历求 WPL 代码" class="inline-block max-w-full" />
-        </div>
 
         <div class="alert alert-warning shadow-sm mt-4">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
