@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>算法题笔记 · 顺序表 & 链表 | 考研408</title>
+  <title>算法题笔记 · 顺序表 & 链表 & 树 | 考研408</title>
 
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -78,6 +78,11 @@
           <li><a href="#ll-optimize" class="pl-6">优化解法</a></li>
           <li><a href="#ll-reverse" class="pl-6">逆置</a></li>
           <li><a href="#ll-exam" class="pl-6">经典真题</a></li>
+          <li><a href="#tree">三、树</a></li>
+          <li><a href="#tree-struct" class="pl-6">考察结构</a></li>
+          <li><a href="#tree-traversal" class="pl-6">树的递归遍历</a></li>
+          <li><a href="#tree-method" class="pl-6">树的做题方法</a></li>
+          <li><a href="#tree-unionfind" class="pl-6">并查集</a></li>
           <li><a href="#summary">总结</a></li>
         </ul>
       </div>
@@ -119,6 +124,17 @@
             </ul>
           </details>
         </li>
+        <li>
+          <details>
+            <summary>树</summary>
+            <ul class="p-2 bg-base-100 rounded-box w-44 shadow">
+              <li><a href="#tree-struct">考察结构</a></li>
+              <li><a href="#tree-traversal">树的递归遍历</a></li>
+              <li><a href="#tree-method">树的做题方法</a></li>
+              <li><a href="#tree-unionfind">并查集</a></li>
+            </ul>
+          </details>
+        </li>
         <li><a href="#summary">总结</a></li>
       </ul>
     </div>
@@ -139,8 +155,8 @@
       <div class="badge badge-primary badge-outline mb-4">考研 408 · 数据结构</div>
       <h1 class="text-4xl lg:text-5xl font-bold tracking-tight mb-4">算法题笔记</h1>
       <p class="text-base-content/60 max-w-xl mx-auto leading-relaxed">
-        系统梳理<strong>顺序表</strong>和<strong>链表</strong>的常见算法思想。<br/>
-        涵盖暴力枚举、快速排序、折半查找、散列表、预处理、多指针法、逆置等核心方法。
+        系统梳理<strong>顺序表</strong>、<strong>链表</strong>和<strong>树</strong>的常见算法思想。<br/>
+        涵盖暴力枚举、快速排序、折半查找、散列表、预处理、多指针法、逆置、树的遍历与并查集等核心方法。
       </p>
       <div class="mt-6 flex justify-center gap-3 flex-wrap">
         <div class="badge badge-ghost gap-1">⏱ 折半查找 O(log n)</div>
@@ -148,6 +164,7 @@
         <div class="badge badge-ghost gap-1">📊 前缀和 O(n)+O(1)</div>
         <div class="badge badge-ghost gap-1">👉 多指针法</div>
         <div class="badge badge-ghost gap-1">🔗 链表</div>
+        <div class="badge badge-ghost gap-1">🌲 树与并查集</div>
       </div>
     </section>
 
@@ -1250,6 +1267,477 @@ void ans(Node* L) {
       </article>
     </section>
 
+<!-- ============================================================ -->
+<!-- 第三部分：树 -->
+<!-- ============================================================ -->
+<section id="tree" class="animate-fade-up delay-2">
+  <h2 class="text-3xl font-bold mb-8 flex items-center gap-3 border-b border-base-300 pb-4">
+    <span class="w-12 h-12 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl">三</span>
+    树
+  </h2>
+
+  <div class="alert alert-info shadow-sm mb-8">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <span class="text-sm">树和图的题目一般不会特别要求复杂度，若无特殊要求，<strong>考试中做出来就可以直接写</strong>，无需考虑优化问题。一般都会考察<strong>树的遍历</strong>，除非特殊说明，遍历一般都用递归写。</span>
+  </div>
+
+  <!-- 3.1 考察结构 -->
+  <article id="tree-struct" class="card bg-base-100 shadow-sm mb-8">
+    <div class="card-body">
+      <h3 class="card-title text-xl mb-4">
+        <span class="badge badge-secondary badge-sm mr-2">3.1</span> 考察结构
+      </h3>
+
+      <h4 class="font-bold text-lg mb-3 mt-2">🌲 树和森林</h4>
+
+      <div class="bg-base-200 rounded-xl p-5 mb-4">
+        <p class="font-bold text-sm mb-2">① 孩子兄弟表示法</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          <code class="font-mono">firstchild</code> 指向该结点的<strong>第一个孩子</strong>，<code class="font-mono">nextbro</code> 指向<strong>下一个兄弟</strong>。
+        </p>
+        <pre><code class="language-cpp">typedef struct TNode{
+    ElemType data;                  // 该结点的权值
+    struct TNode *firstchild, *nextbro;   // firstchild 指向第一个孩子，nextbro 指向下一个兄弟
+}TNode;</code></pre>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image43.png" alt="孩子兄弟表示法" class="inline-block max-w-full" />
+        </div>
+      </div>
+
+      <div class="bg-base-200 rounded-xl p-5 mb-4">
+        <p class="font-bold text-sm mb-2">② 双亲表示法（常用于并查集）</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          一般采用<strong>数组存储</strong>，<code class="font-mono">father</code> 数组保存每个结点的父亲结点在数组中的下标；也可以定义结构体。
+        </p>
+        <div class="grid sm:grid-cols-2 gap-4 mb-3">
+          <div>
+            <p class="text-xs text-base-content/50 mb-1">数组存储方式：</p>
+            <pre><code class="language-cpp">int father[MAX_SIZE];   // 保存每个结点的父亲结点下标</code></pre>
+          </div>
+          <div>
+            <p class="text-xs text-base-content/50 mb-1">结构体存储方式：</p>
+            <pre><code class="language-cpp">typedef struct TNode{
+    ElemType data;             // 该结点的权值
+    struct TNode *father;      // father 指向父结点
+}TNode;</code></pre>
+          </div>
+        </div>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image44.png" alt="双亲表示法-数组" class="inline-block max-w-full" />
+        </div>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image45.png" alt="双亲表示法-结构体" class="inline-block max-w-full" />
+        </div>
+      </div>
+
+      <h4 class="font-bold text-lg mb-3 mt-2">🌳 二叉树</h4>
+
+      <div class="bg-base-200 rounded-xl p-5 mb-4">
+        <p class="font-bold text-sm mb-2">① 二叉链表</p>
+        <pre><code class="language-cpp">typedef struct BTNode{
+    ElemType data;                   // 该结点的权值
+    struct BTNode *lchild, *rchild;  // lchild 指向左孩子，rchild 指向右孩子
+}BTNode;</code></pre>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image46.png" alt="二叉链表" class="inline-block max-w-full" />
+        </div>
+      </div>
+
+      <div class="bg-base-200 rounded-xl p-5">
+        <p class="font-bold text-sm mb-2">② 顺序存储（完全二叉树）</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          对<strong>完全二叉树</strong>，从根起按层序存储即可：依次<strong>自上而下、自左至右</strong>存储结点元素，即将编号为 i 的结点存在数组下标 i-1 的位置；可以用 <code class="font-mono">-1</code> 或 <code class="font-mono">0</code> 表示对应结点不存在。
+        </p>
+        <pre><code class="language-cpp">typedef struct{
+    int SqBiTNode[MAX_SIZE];   // 一维数组保存二叉树结点
+    int ElemNum;               // 结点个数
+}SqBiTree;</code></pre>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image47.png" alt="二叉树顺序存储" class="inline-block max-w-full" />
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 3.2 树的递归遍历 -->
+  <article id="tree-traversal" class="card bg-base-100 shadow-sm mb-8">
+    <div class="card-body">
+      <h3 class="card-title text-xl mb-4">
+        <span class="badge badge-secondary badge-sm mr-2">3.2</span> 树的递归遍历
+      </h3>
+
+      <h4 class="font-bold text-lg mb-3 mt-2">二叉树的递归遍历</h4>
+      <p class="text-sm text-base-content/60 mb-3">
+        先、中、后序的递归遍历<strong>时间复杂度 O(n)</strong>，<strong>空间复杂度 O(h)</strong>（n 为总结点数，h 为树高）；若不确定树高，空间复杂度视为 O(n)。
+      </p>
+
+      <div class="grid sm:grid-cols-2 gap-4 mb-4">
+        <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">先序遍历（根 → 左 → 右）</p>
+          <pre><code class="language-cpp">void PreOrder(BTNode *p){
+    if (p == NULL) return;
+    visit(p);                 // 先访问根结点
+    PreOrder(p->lchild);
+    PreOrder(p->rchild);
+}</code></pre>
+          <div class="img-card mt-3 text-center">
+            <img src="./算法题_images/word/media/image48.png" alt="先序遍历" class="inline-block max-w-full" />
+          </div>
+        </div>
+        <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">中序 / 后序</p>
+          <pre><code class="language-cpp">// 中序遍历（左 → 根 → 右）
+void InOrder(BTNode *p){
+    if (p == NULL) return;
+    InOrder(p->lchild);
+    visit(p);                 // 中间访问根结点
+    InOrder(p->rchild);
+}
+// 后序遍历（左 → 右 → 根）
+void PostOrder(BTNode *p){
+    if (p == NULL) return;
+    PostOrder(p->lchild);
+    PostOrder(p->rchild);
+    visit(p);                 // 最后访问根结点
+}</code></pre>
+          <div class="img-card mt-3 text-center">
+            <img src="./算法题_images/word/media/image49.png" alt="中序与后序遍历" class="inline-block max-w-full" />
+          </div>
+        </div>
+      </div>
+
+      <h4 class="font-bold text-lg mb-3 mt-2">树和森林的递归遍历</h4>
+      <p class="text-sm text-base-content/60 mb-3">
+        本质是对<strong>孩子兄弟表示法</strong>结构的递归操作，重点记住 <strong>「左孩子右兄弟」</strong>，可转化为"二叉树"模型来理解递归逻辑：
+      </p>
+      <div class="grid sm:grid-cols-2 gap-4 mb-2">
+        <div class="alert alert-success shadow-sm mb-0">
+          <div class="text-sm">树和森林的<strong>先根遍历</strong> ≡ 二叉树的<strong>先序遍历</strong></div>
+        </div>
+        <div class="alert alert-success shadow-sm mb-0">
+          <div class="text-sm">树和森林的<strong>后根遍历</strong> ≡ 二叉树的<strong>中序遍历</strong></div>
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-4">
+        <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">先根遍历（先访问根，再访问孩子）</p>
+          <pre><code class="language-cpp">void TreePreOrder(TNode *T){
+    if (T == NULL) return;
+    visit(T);                     // 先访问根结点
+    TreePreOrder(T->firstchild);  // 再访问第一个孩子
+    TreePreOrder(T->nextbro);     // 再访问下一个兄弟
+}</code></pre>
+          <div class="img-card mt-3 text-center">
+            <img src="./算法题_images/word/media/image50.png" alt="先根遍历" class="inline-block max-w-full" />
+          </div>
+        </div>
+        <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">后根遍历（孩子访问完再访问根）</p>
+          <pre><code class="language-cpp">void TreePostOrder(TNode *T){
+    if (T == NULL) return;
+    TreePostOrder(T->firstchild);  // 先访问孩子
+    TreePostOrder(T->nextbro);     // 再访问兄弟
+    visit(T);                      // 最后访问根
+}</code></pre>
+          <div class="img-card mt-3 text-center">
+            <img src="./算法题_images/word/media/image51.png" alt="后根遍历" class="inline-block max-w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 3.3 树的做题方法 -->
+  <article id="tree-method" class="card bg-base-100 shadow-sm mb-8">
+    <div class="card-body">
+      <h3 class="card-title text-xl mb-4">
+        <span class="badge badge-secondary badge-sm mr-2">3.3</span> 树的做题方法
+      </h3>
+
+      <p class="text-sm text-base-content/60 mb-3">
+        408 中树算法考察的<strong>核心是树的遍历</strong>，因此应<strong>先确定选择哪种遍历方式</strong>，以对应遍历作为框架，把 <code class="font-mono">visit(p)</code> 改造成题目要求的功能。
+      </p>
+
+      <div class="bg-base-200 rounded-xl p-5 mb-4">
+        <p class="font-bold text-sm mb-2">🧭 具体做题步骤</p>
+        <ol class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
+          <li>确定选择哪种遍历方式（前序、中序、后序、层序）</li>
+          <li>确定题目需要哪些信息，再设计 <code class="font-mono">visit(p)</code> 的实现</li>
+        </ol>
+        <p class="text-sm text-base-content/70 mt-3">
+          <code class="font-mono">visit(p)</code> 需要<strong>根据题目要求自定义实现</strong>：通过处理当前结点 p，用<strong>全局变量</strong>（累加、计数、状态标记）或<strong>函数返回值</strong>（自底向上传递信息）来统计结果。
+        </p>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image52.png" alt="例题4-1~4-6总览" class="inline-block max-w-full" />
+        </div>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image54.png" alt="做题方法框架" class="inline-block max-w-full" />
+        </div>
+      </div>
+
+      <!-- 例题 4-1 ~ 4-6 -->
+      <h4 class="font-bold text-lg mb-3 mt-2">📝 例题 4-1 ~ 4-6</h4>
+      <div class="space-y-4">
+
+        <div class="bg-base-200 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">例题 4-1：判断结点 p 是否为叶结点</p>
+          <ul class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
+            <li>前、中、后序遍历都可以。因为判断一个结点 p 是否为叶结点<strong>不依赖它的子树信息</strong>。</li>
+            <li>visit(p) 实现：需要一个<strong>全局计数器</strong>（如 <code class="font-mono">int leaf_count = 0;</code>），逻辑即检查当前结点是否为叶结点，若是则 <code class="font-mono">leaf_count++</code>。</li>
+          </ul>
+        </div>
+
+        <div class="bg-base-200 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">例题 4-2：求树的深度</p>
+          <ul class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
+            <li>一个结点 p 的深度是 <code class="font-mono">1 + max(左子树高度, 右子树高度)</code>，因此必须先知道左右子树的深度。这是<strong>自底向上</strong>的过程，需要用<strong>后序遍历</strong>。</li>
+            <li>visit(p) 需要通过<strong>函数返回值</strong>来传递信息（不能简单地修改全局变量）。</li>
+          </ul>
+        </div>
+
+        <div class="bg-base-200 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">例题 4-3：判断是否为完全二叉树</p>
+          <ul class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
+            <li>完全二叉树按层序从左向右填充，自然想到<strong>层序遍历</strong>。顺序存储时只需找到最后一个非空结点 k 的位置，再判断 0~k 之间是否都有结点即可。</li>
+            <li>visit(p) 需要能够：① 用队列，让根结点入队；② 设标志位 <code class="font-mono">bool leaf = false</code>；③ 循环直至队列为空：结点 p 出队，若 leaf 为 true 但 p 却有子结点，则该树不是完全二叉树，返回 false；若 p 有右孩子而无左孩子，直接返回 false；若 p 只有左孩子或无孩子，设 leaf 为 true；将 p 的非空子结点入队。④ 循环正常结束，返回 true。</li>
+          </ul>
+        </div>
+
+        <div class="bg-base-200 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">例题 4-4：判断是否为二叉排序树 BST</p>
+          <ul class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
+            <li>BST 的特性是<strong>左子树 &lt; 根 &lt; 右子树</strong>，故很自然地想到<strong>中序遍历</strong>（左 → 根 → 右）。</li>
+            <li>visit(p) 需要：设定变量 <code class="font-mono">pre_value</code> 记录中序遍历中"上一个"被访问的值。① 初始化 <code class="font-mono">pre_value = INT_MIN</code>；② 进行中序遍历；③ visit(p) 比较当前 p-&gt;value 与 pre_value，若 <code class="font-mono">p-&gt;value &lt;= pre_value</code> 则不满足递增性质，非 BST，返回 false；若满足则更新 <code class="font-mono">pre_value = p-&gt;value</code> 后继续遍历；④ 整个遍历成功则返回 true。</li>
+          </ul>
+        </div>
+
+        <div class="bg-base-200 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">例题 4-5：森林中找叶结点</p>
+          <ul class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
+            <li>森林是多棵树的集合，可对任意一棵树分别遍历；对树找叶结点与<strong>例题 4-1 等价</strong>，故前、中、后序遍历都可以。</li>
+            <li>visit(p) 功能实现与 4-1 相同。</li>
+          </ul>
+        </div>
+
+        <div class="bg-base-200 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">例题 4-6：判断是否为 AVL 平衡二叉树</p>
+          <ul class="text-sm text-base-content/70 space-y-1 list-decimal list-inside">
+            <li>AVL 树要求任意结点左右子树<strong>高度差绝对值不超过 1</strong>，因此判断 p 是否平衡必须先知道其左右子树的高度。这是<strong>自底向上</strong>的计算，用<strong>后序遍历</strong>。</li>
+            <li>visit(p) 实现：结合 4-2 求树高与判断。设计递归函数返回子树高度，若发现不平衡则返回特殊值（如 <code class="font-mono">-1</code>）作为标记。</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 总结：各类例题的遍历选择 -->
+      <div class="bg-base-200 rounded-xl p-5 mt-4">
+        <p class="font-bold text-sm mb-2">📋 总结：各类例题的遍历选择</p>
+        <div class="overflow-x-auto">
+          <table class="table table-sm table-zebra">
+            <thead>
+              <tr class="bg-base-300">
+                <th class="text-sm">例题</th>
+                <th class="text-sm">问题</th>
+                <th class="text-sm">遍历方式</th>
+                <th class="text-sm">信息传递</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="text-sm">4-1</td><td class="text-sm">判断叶结点</td><td class="text-sm">前 / 中 / 后序均可</td><td class="text-sm">全局变量</td></tr>
+              <tr><td class="text-sm">4-2</td><td class="text-sm">求树的深度</td><td class="text-sm">后序（自底向上）</td><td class="text-sm">函数返回值</td></tr>
+              <tr><td class="text-sm">4-3</td><td class="text-sm">判断完全二叉树</td><td class="text-sm">层序遍历</td><td class="text-sm">队列 + 标志位</td></tr>
+              <tr><td class="text-sm">4-4</td><td class="text-sm">判断 BST</td><td class="text-sm">中序（递增性质）</td><td class="text-sm">全局变量 pre_value</td></tr>
+              <tr><td class="text-sm">4-5</td><td class="text-sm">森林找叶结点</td><td class="text-sm">前 / 中 / 后序均可</td><td class="text-sm">全局变量（同 4-1）</td></tr>
+              <tr><td class="text-sm">4-6</td><td class="text-sm">判断 AVL</td><td class="text-sm">后序（需子树高度）</td><td class="text-sm">函数返回值（-1 标记）</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image55.png" alt="例题总结表" class="inline-block max-w-full" />
+        </div>
+      </div>
+
+      <!-- WPL：全局变量 vs 函数返回值 -->
+      <div class="mt-6">
+        <p class="font-bold text-lg mb-2">💡 补充：带权路径长度 WPL 的两种统计方式</p>
+        <p class="text-sm text-base-content/60 mb-3">
+          很多时候题目需要我们统计信息，可采用<strong>函数返回值</strong>或<strong>全局变量</strong>的方式，有时候两种都可以。以计算二叉树带权路径长度为例：<strong>WPL = Σ(叶结点权值 W<sub>i</sub> × 该结点深度 D<sub>i</sub>)</strong>。
+        </p>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+            <p class="font-bold text-sm mb-2">① 全局变量（遍历中"收集"信息）</p>
+            <p class="text-xs text-base-content/60 mb-3">
+              核心思想：定义在所有递归调用中<strong>共享的变量</strong>，遍历任意一步满足条件就直接修改它。适用场景：全局的<strong>累加、计数或状态标记</strong>。
+            </p>
+            <pre><code class="language-cpp">int WPL = 0;                         // WPL 全局变量
+void PreOrder(BTNode *p, int depth){ // 传入结点 p，附带深度 depth
+    if (p == NULL) return;           // 空结点直接返回
+    // visit(p);
+    if (p->lchild == NULL &amp;&amp; p->rchild == NULL)  // 叶结点
+        WPL += depth * p-&gt;weight;    // 累加 深度×权值
+    PreOrder(p->lchild, depth+1);    // 递归左子树
+    PreOrder(p->rchild, depth+1);    // 递归右子树
+}</code></pre>
+            <div class="img-card mt-3 text-center">
+              <img src="./算法题_images/word/media/image56.png" alt="WPL 全局变量写法" class="inline-block max-w-full" />
+            </div>
+          </div>
+          <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
+            <p class="font-bold text-sm mb-2">② 函数返回值（自底向上传递）</p>
+            <p class="text-xs text-base-content/60 mb-3">
+              核心思想：子问题的解（子树递归调用）通过 <code class="font-mono">return</code> 返回给父问题，父问题利用返回结果计算自己的解。适用场景：返回值表示<strong>以该子树为核心</strong>的二叉树对应值。
+            </p>
+            <pre><code class="language-cpp">int postOrder(BTNode *p, int depth){ // 传入结点 p，附带深度 depth
+    if (p == NULL) return 0;         // 空结点返回 0
+    int L_WPL = postOrder(p->lchild, depth+1);  // 左子树 WPL
+    int R_WPL = postOrder(p->rchild, depth+1);  // 右子树 WPL
+    // visit(p);
+    if (p->lchild == NULL &amp;&amp; p->rchild == NULL) // 叶结点
+        return depth * p-&gt;weight;    // 返回 深度×权值
+    else
+        return L_WPL + R_WPL;        // 返回左右子树 WPL 之和
+}</code></pre>
+            <div class="img-card mt-3 text-center">
+              <img src="./算法题_images/word/media/image57.png" alt="WPL 函数返回值写法" class="inline-block max-w-full" />
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-warning shadow-sm mt-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <span class="text-sm"><strong>什么时候需要递归时定义变量？</strong> 一般是<strong>后序遍历</strong>的时候——此时依赖于左右子树的递归情况，需要先定义 <code class="font-mono">BTNode *left = PostOrder(...); BTNode *right = PostOrder(...);</code>，然后 visit(p) 要用到 left 与 right 的值。</span>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 3.4 并查集 -->
+  <article id="tree-unionfind" class="card bg-base-100 shadow-sm mb-8">
+    <div class="card-body">
+      <h3 class="card-title text-xl mb-4">
+        <span class="badge badge-secondary badge-sm mr-2">3.4</span> 并查集
+      </h3>
+
+      <p class="text-sm text-base-content/60 mb-4">
+        并查集是一种高效支持<strong>"集合合并"</strong>与<strong>"查找代表元"</strong>的数据结构，常用于处理图中<strong>连通性判断、集合合并</strong>问题，例如判断是否构成树、求连通块数量、判断环等。
+      </p>
+      <p class="text-sm text-base-content/60 mb-4">
+        常用<strong>双亲表示法</strong>定义：用数组 <code class="font-mono">father[]</code> 存储每个元素的"父结点"（其实是祖先结点），形成森林结构。通常将 <code class="font-mono">father[]</code> 定义成<strong>全局变量</strong>以方便使用。
+      </p>
+
+      <pre><code class="language-cpp">int father[MAXN];            // father[i] 表示 i 的父结点（祖先）</code></pre>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-4 mb-4">
+        <div class="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">find(x) —— 查找根结点（路径压缩）</p>
+          <p class="text-xs text-base-content/60 mb-3">
+            查找下标为 x 的结点所在的树根下标；<strong>路径压缩</strong>：把查找途中所有结点全部变成根结点的儿子，减少树的高度。
+          </p>
+          <pre><code class="language-cpp">// 查找根结点（含路径压缩）
+int find(int x){
+    if (father[x] != x)
+        father[x] = find(father[x]);
+    return father[x];
+}</code></pre>
+        </div>
+        <div class="bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-800 rounded-xl p-5">
+          <p class="font-bold text-sm mb-2">Union(x, y) —— 合并两棵树</p>
+          <p class="text-xs text-base-content/60 mb-3">
+            将下标为 x、y 的结点所在的树合并。
+          </p>
+          <pre><code class="language-cpp">// 合并两个集合
+void Union(int x, int y){
+    int fx = find(x);
+    int fy = find(y);
+    if (fx != fy)
+        father[fy] = fx;   // 将 fy 的根指向 fx
+}</code></pre>
+        </div>
+      </div>
+      <div class="img-card mt-1 text-center">
+        <img src="./算法题_images/word/media/image58.png" alt="并查集 father 数组" class="inline-block max-w-full" />
+      </div>
+      <div class="img-card mt-3 text-center">
+        <img src="./算法题_images/word/media/image59.png" alt="并查集 find 与 union 代码" class="inline-block max-w-full" />
+      </div>
+
+      <div class="alert alert-info shadow-sm mt-4">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="text-sm">⚠️ <code class="font-mono">union</code> 是 C++ 关键字，实际编译中不能直接用作函数名，考试书写时建议写成 <code class="font-mono">Union</code>。</span>
+      </div>
+
+      <!-- 并查集章节的层次遍历例题 -->
+      <div class="mt-6">
+        <p class="font-bold text-lg mb-2">📌 例题：层次遍历（BFS）求带权路径长度</p>
+
+        <div class="bg-base-200 rounded-xl p-5 mb-4">
+          <p class="text-sm text-base-content/70 mb-3">
+            二叉树结点定义如下，每个结点<strong>权值为 1</strong>：
+          </p>
+          <pre><code class="language-cpp">typedef struct BTNode{
+    int data;
+    struct BTNode *lchild, *rchild;
+}BTNode;</code></pre>
+          <p class="text-sm text-base-content/70 mt-3">
+            (1) 按照二叉树的<strong>层次遍历 BFS</strong> 设计算法，求二叉树的带权路径长度。
+          </p>
+          <p class="text-sm text-base-content/70">
+            (2) 用 C/C++ 写出代码并给出注释。
+          </p>
+          <p class="text-sm text-base-content/70">
+            (3) 分析算法的时间复杂度和空间复杂度。
+          </p>
+          <div class="img-card mt-3 text-center">
+            <img src="./算法题_images/word/media/image60.png" alt="层次遍历例题题目" class="inline-block max-w-full" />
+          </div>
+        </div>
+
+        <p class="font-bold text-sm mb-2">💡 思路</p>
+        <ul class="text-sm text-base-content/70 space-y-1 list-disc list-inside mb-4">
+          <li><code class="font-mono">front</code> 保存队头下标，<code class="font-mono">rear</code> 保存队尾下标，<code class="font-mono">last</code> 表示<strong>上一层最后一个元素</strong>的下标。</li>
+          <li>当<strong>本层访问完</strong>时，下一层元素个数即为 <code class="font-mono">rear - front</code>。</li>
+        </ul>
+
+        <pre><code class="language-cpp">int ans(BTNode *T){
+    BTNode* q[MAX_SIZE];           // 循环队列
+    int front = 0, rear = 0, depth = 1;
+    int last = 0;                  // 本层最后一个元素的下标
+    if (T != NULL) q[rear++] = T;  // 根结点入队
+    BTNode *p;                     // 当前出队结点
+    int sum = 1 * 1;               // 初始化第一层的贡献：1 个结点 × 深度 1
+    while (front &lt; rear){
+        p = q[front++];            // 出队
+        if (p->lchild != NULL)
+            q[rear++] = p->lchild;
+        if (p->rchild != NULL)
+            q[rear++] = p->rchild;
+        if (front &gt; last){        // 本层访问结束
+            depth++;
+            printf("%d %d %d\n", front, rear, depth);
+            sum += (rear - front) * depth;  // 下一层的结点数 × 新深度
+            last = rear - 1;       // 更新本层末尾哨兵
+        }
+    }
+    return sum;
+}</code></pre>
+        <div class="img-card mt-3 text-center">
+          <img src="./算法题_images/word/media/image61.png" alt="层次遍历求 WPL 代码" class="inline-block max-w-full" />
+        </div>
+
+        <div class="alert alert-warning shadow-sm mt-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <span class="text-sm">
+            <strong>注意：</strong>在 <code class="font-mono">if (front &gt; last)</code> 刚成立时，此时 <code class="font-mono">rear - front</code> 保存的是<strong>下一层</strong>的结点个数，但 depth 仍是上一层的，故需<strong>先进行 depth++</strong>。手动模拟：根结点入队后 front=0, rear=1，本层末尾哨兵 last = rear-1 = 0；进入 while 循环，根出队 front=1，两个子结点入队 rear=3，此时 <code class="font-mono">front &gt; last</code> 成立，rear-front=2 即第二层结点数，故 depth++ 变为 2，再更新 sum（已提前设 sum=1 把第一层算出来了）。
+          </span>
+        </div>
+
+        <div class="badge badge-outline badge-lg mt-4">⏱ 时间复杂度 O(n) · 空间复杂度 O(n)</div>
+      </div>
+    </div>
+  </article>
+</section>
+
     <!-- ============================================================ -->
     <!-- 总结 -->
     <!-- ============================================================ -->
@@ -1306,8 +1794,32 @@ void ans(Node* L) {
         </table>
       </div>
 
+      <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+        <span class="text-accent">🌲</span> 树
+      </h3>
+      <div class="overflow-x-auto mb-8">
+        <table class="table table-zebra bg-base-100 shadow-sm rounded-xl overflow-hidden">
+          <thead>
+            <tr class="bg-base-300">
+              <th class="text-sm">考点</th>
+              <th class="text-sm">遍历方式</th>
+              <th class="text-sm">关键点</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="font-semibold">判断叶结点</span></td><td class="text-sm">前/中/后序均可</td><td class="text-sm">不依赖子树信息，全局变量计数</td></tr>
+            <tr><td><span class="font-semibold">求树的深度</span></td><td class="text-sm">后序</td><td class="text-sm">自底向上，用函数返回值</td></tr>
+            <tr><td><span class="font-semibold">判断完全二叉树</span></td><td class="text-sm">层序</td><td class="text-sm">队列 + 标志位，检查是否连续非空</td></tr>
+            <tr><td><span class="font-semibold">判断 BST</span></td><td class="text-sm">中序</td><td class="text-sm">中序递增，用 pre_value 比较</td></tr>
+            <tr><td><span class="font-semibold">判断 AVL</span></td><td class="text-sm">后序</td><td class="text-sm">求子树高度 + 返回 -1 标记不平衡</td></tr>
+            <tr><td><span class="font-semibold">并查集</span></td><td class="text-sm">—</td><td class="text-sm">find 路径压缩 + Union 合并，双亲表示法</td></tr>
+            <tr><td><span class="font-semibold">WPL 带权路径长度</span></td><td class="text-sm">先序/后序/层序</td><td class="text-sm">全局变量累加 or 函数返回值，层序用 front/rear/last</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <p class="text-xs text-base-content/40 text-center mt-6">
-        整理自桌面「算法题.docx」· 2026-08-02 · 考研 408 自学笔记
+        整理自桌面「算法题.docx」· 更新于 2026-08-06 · 考研 408 自学笔记
       </p>
     </section>
 
