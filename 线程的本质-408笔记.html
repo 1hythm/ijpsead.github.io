@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>糸 — 线程的本质</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --washi:#fbf7f4; --washi-2:#f5eef1;
+  --sakura:#e39ab0; --sakura-soft:#f6dbe3;
+  --fuji:#a294d6; --fuji-soft:#e4dff5;
+  --asagi:#7cc3cf; --asagi-soft:#d8eff2;
+  --yamabuki:#dfae63; --yamabuki-soft:#f7e9cf;
+  --sumi:#4e4759; --sumi-2:#7b7389; --sumi-3:#a49dae;
+  --line:#e7dee4;
+  --shadow:0 10px 40px -18px rgba(120,95,130,.45);
+  --disp:'Shippori Mincho',serif;
+  --body:'Zen Kaku Gothic New','PingFang SC','Microsoft YaHei',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--washi);color:var(--sumi);font-family:var(--body);line-height:1.95;overflow-x:hidden;letter-spacing:.02em}
+
+/* ========= 背景层 ========= */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;mix-blend-mode:multiply}
+.b1{width:60vw;height:60vw;background:radial-gradient(circle,#f7cfdd,transparent 70%);top:-18vw;left:-14vw;animation:drift1 34s ease-in-out infinite}
+.b2{width:52vw;height:52vw;background:radial-gradient(circle,#ded6f7,transparent 70%);top:32vh;right:-16vw;animation:drift2 41s ease-in-out infinite}
+.b3{width:46vw;height:46vw;background:radial-gradient(circle,#d3edf2,transparent 70%);bottom:-12vw;left:18vw;animation:drift3 47s ease-in-out infinite}
+.b4{width:38vw;height:38vw;background:radial-gradient(circle,#f8ead0,transparent 70%);top:120vh;left:-8vw;animation:drift1 39s ease-in-out infinite reverse}
+.b5{width:44vw;height:44vw;background:radial-gradient(circle,#f5d8e6,transparent 70%);top:210vh;right:-10vw;animation:drift2 44s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,8vh) scale(1.15)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-7vw,-6vh) scale(.9)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(.95)}50%{transform:translate(5vw,-9vh) scale(1.2)}}
+.grain{position:absolute;inset:0;opacity:.32;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+.rain{position:absolute;inset:0;opacity:.22}
+.rain i{position:absolute;top:-20%;width:1px;height:90px;background:linear-gradient(to bottom,transparent,rgba(160,145,185,.55),transparent);animation:fall linear infinite}
+@keyframes fall{0%{transform:translateY(-20vh)}100%{transform:translateY(125vh)}}
+.bokeh{position:absolute;inset:0}
+.bokeh span{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.9),rgba(240,215,230,.25) 60%,transparent);animation:rise linear infinite;filter:blur(.4px)}
+@keyframes rise{0%{transform:translateY(0) scale(.7);opacity:0}12%{opacity:.75}88%{opacity:.55}100%{transform:translateY(-115vh) scale(1.25);opacity:0}}
+.rays{position:absolute;inset:0;opacity:.35}
+.rays u{position:absolute;top:-10%;height:130%;width:22vw;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.75),transparent);transform:skewX(-12deg);animation:sweep 18s ease-in-out infinite}
+@keyframes sweep{0%,100%{opacity:.15;transform:skewX(-12deg) translateX(0)}50%{opacity:.5;transform:skewX(-12deg) translateX(4vw)}}
+#petals{position:fixed;inset:0;z-index:1;pointer-events:none}
+
+/* ========= 导航 ========= */
+.progress{position:fixed;top:0;left:0;height:2px;z-index:60;background:linear-gradient(90deg,var(--sakura),var(--fuji),var(--asagi));width:0;box-shadow:0 0 12px rgba(200,150,190,.8)}
+.rail{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:16px}
+.rail a{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--sumi-3);font-size:11px;letter-spacing:.22em}
+.rail b{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none;transition:.45s}
+.rail span{opacity:0;transform:translateX(-6px);transition:.45s;white-space:nowrap;font-family:var(--disp)}
+.rail a:hover span,.rail a.on span{opacity:1;transform:none;color:var(--sumi-2)}
+.rail a.on b{background:var(--sakura);box-shadow:0 0 0 5px rgba(227,154,176,.18)}
+@media(max-width:1180px){.rail{display:none}}
+
+.wrap{position:relative;z-index:2;max-width:980px;margin:0 auto;padding:0 26px 140px}
+
+/* ========= HERO ========= */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative}
+.hero .kanji{font-family:var(--disp);font-weight:800;font-size:clamp(120px,28vw,300px);line-height:.9;
+  background:linear-gradient(150deg,var(--sakura) 0%,var(--fuji) 45%,var(--asagi) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 18px 40px rgba(190,150,200,.35));animation:breathe 7s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1);filter:drop-shadow(0 18px 40px rgba(190,150,200,.3))}50%{transform:scale(1.028);filter:drop-shadow(0 26px 54px rgba(190,150,200,.5))}}
+.hero .furi{font-family:var(--disp);font-size:13px;letter-spacing:1.1em;color:var(--sumi-3);margin-top:-6px;padding-left:1.1em}
+.hero h1{font-family:var(--disp);font-weight:600;font-size:clamp(22px,4.2vw,36px);margin-top:34px;letter-spacing:.14em}
+.hero .lead{max-width:640px;margin:26px auto 0;color:var(--sumi-2);font-weight:300;font-size:15.5px;line-height:2.3}
+.hero .meta{margin-top:40px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.chip{font-size:11.5px;letter-spacing:.18em;padding:7px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.6);backdrop-filter:blur(8px);color:var(--sumi-2)}
+.scrolltip{position:absolute;bottom:42px;left:50%;transform:translateX(-50%);color:var(--sumi-3);font-size:11px;letter-spacing:.3em;font-family:var(--disp)}
+.scrolltip::after{content:'';display:block;width:1px;height:44px;margin:12px auto 0;background:linear-gradient(to bottom,var(--sakura),transparent);animation:pull 2.4s ease-in-out infinite;transform-origin:top}
+@keyframes pull{0%,100%{transform:scaleY(.35);opacity:.4}50%{transform:scaleY(1);opacity:1}}
+.thread{position:absolute;left:50%;top:0;width:1px;height:100%;background:linear-gradient(to bottom,transparent,rgba(227,154,176,.35),rgba(162,148,214,.3),transparent);z-index:1;pointer-events:none}
+
+/* ========= 章节 ========= */
+.chap{padding-top:110px;margin-top:40px}
+.chap-head{display:flex;align-items:flex-end;gap:22px;margin-bottom:14px}
+.chap-num{font-family:var(--disp);font-size:64px;line-height:.8;color:transparent;-webkit-text-stroke:1px var(--sakura);opacity:.75}
+.chap-jp{font-family:var(--disp);font-size:12px;letter-spacing:.5em;color:var(--sumi-3);margin-bottom:6px}
+.chap h2{font-family:var(--disp);font-weight:600;font-size:clamp(24px,3.4vw,32px);letter-spacing:.08em;line-height:1.5}
+.chap-rule{height:1px;background:linear-gradient(90deg,var(--sakura),var(--fuji) 35%,transparent 85%);margin:20px 0 34px}
+.chap-intro{color:var(--sumi-2);font-weight:300;font-size:15px;line-height:2.25;margin-bottom:38px;max-width:760px}
+h3{font-family:var(--disp);font-size:19px;font-weight:600;letter-spacing:.06em;margin:52px 0 18px;display:flex;align-items:center;gap:12px}
+h3::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--fuji);flex:none;box-shadow:0 0 0 4px rgba(162,148,214,.16)}
+h4{font-family:var(--disp);font-size:15.5px;font-weight:600;margin:30px 0 12px;letter-spacing:.05em}
+p{margin:14px 0;font-size:14.8px;line-height:2.15;color:#584f66}
+ul,ol{margin:14px 0 14px 4px;padding-left:20px}
+li{margin:9px 0;font-size:14.6px;line-height:2.05;color:#584f66}
+li::marker{color:var(--sakura)}
+strong{font-weight:700;color:var(--sumi)}
+code{font-family:var(--mono);font-size:12.5px;background:var(--washi-2);padding:2px 6px;border-radius:5px;color:#8a5f7d;border:1px solid rgba(227,154,176,.22)}
+.mk{background:linear-gradient(to top,rgba(246,219,227,.9) 0 42%,transparent 42%);padding:0 2px;font-weight:500}
+.mk-f{background:linear-gradient(to top,rgba(228,223,245,.95) 0 42%,transparent 42%);padding:0 2px;font-weight:500}
+.mk-a{background:linear-gradient(to top,rgba(216,239,242,.95) 0 42%,transparent 42%);padding:0 2px;font-weight:500}
+
+/* ========= 卡片 ========= */
+.card{background:rgba(255,255,255,.72);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:18px;padding:26px 28px;margin:22px 0;box-shadow:var(--shadow);transition:.5s cubic-bezier(.2,.8,.3,1)}
+.card:hover{transform:translateY(-4px);box-shadow:0 22px 60px -22px rgba(140,110,160,.42);border-color:rgba(227,154,176,.4)}
+.card-t{font-family:var(--disp);font-size:15px;font-weight:600;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.tag{font-size:10.5px;letter-spacing:.16em;padding:4px 10px;border-radius:999px;font-weight:500;flex:none}
+.tag-e{background:var(--sakura-soft);color:#a05470}
+.tag-r{background:var(--asagi-soft);color:#3f7f8a}
+.tag-w{background:var(--yamabuki-soft);color:#96702c}
+.tag-f{background:var(--fuji-soft);color:#6a5aa8}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+@media(max-width:760px){.duo{grid-template-columns:1fr}}
+.duo .card{margin:0}
+.card-e{border-top:3px solid var(--sakura)}
+.card-r{border-top:3px solid var(--asagi)}
+.quote{border-left:2px solid var(--fuji);padding:6px 0 6px 20px;margin:22px 0;color:var(--sumi-2);font-weight:300;font-size:14.2px;line-height:2.1}
+.quote em{font-family:var(--mono);font-size:12.5px;font-style:normal;color:#7a6a92}
+.note{background:linear-gradient(135deg,rgba(247,233,207,.55),rgba(255,255,255,.5));border:1px solid rgba(223,174,99,.32);border-radius:14px;padding:18px 22px;margin:22px 0;font-size:14px;line-height:2.05}
+.note b{color:#96702c;font-family:var(--disp);letter-spacing:.06em}
+.warn{background:linear-gradient(135deg,rgba(246,219,227,.6),rgba(255,255,255,.5));border:1px solid rgba(227,154,176,.4);border-radius:14px;padding:18px 22px;margin:22px 0;font-size:14px;line-height:2.05}
+.warn b{color:#a05470;font-family:var(--disp);letter-spacing:.06em}
+
+/* ========= 代码 ========= */
+pre{background:linear-gradient(180deg,#fdfafc,#f8f2f6);border:1px solid var(--line);border-radius:14px;padding:20px 22px;overflow-x:auto;margin:20px 0;font-family:var(--mono);font-size:12.4px;line-height:1.95;box-shadow:inset 0 1px 0 #fff,0 8px 28px -20px rgba(140,110,160,.5)}
+pre code{background:none;border:none;padding:0;color:#5b5468;font-size:12.4px}
+.c-k{color:#a0628c}.c-f{color:#6d7fbd}.c-n{color:#3f8a8f}.c-c{color:#b0a8bb;font-style:italic}
+.pre-t{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--sumi-3);margin:24px 0 -12px}
+
+/* ========= 表格 ========= */
+.tw{overflow-x:auto;margin:24px 0;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.72);backdrop-filter:blur(10px)}
+table{width:100%;border-collapse:collapse;font-size:13.4px;min-width:560px}
+th{background:linear-gradient(135deg,rgba(246,219,227,.5),rgba(228,223,245,.4));font-family:var(--disp);font-weight:600;padding:14px 16px;text-align:left;letter-spacing:.06em;border-bottom:1px solid var(--line);font-size:12.8px}
+td{padding:13px 16px;border-bottom:1px solid rgba(231,222,228,.7);line-height:1.85;color:#584f66;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:.3s}
+tbody tr:hover{background:rgba(246,219,227,.22)}
+.yes{color:#3f8a8f;font-weight:600}
+.no{color:#c26b8a;font-weight:600}
+
+/* ========= 图 ========= */
+.fig{margin:32px 0;padding:26px 20px 20px;background:rgba(255,255,255,.6);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.fig svg{width:100%;height:auto;display:block;overflow:visible}
+.fig-c{text-align:center;font-size:11.5px;letter-spacing:.16em;color:var(--sumi-3);margin-top:18px;font-family:var(--disp)}
+.fig-t{font-family:var(--disp);font-size:13px;letter-spacing:.14em;color:var(--sumi-2);margin-bottom:18px;text-align:center}
+.sv-box{fill:#fff;stroke:var(--line);stroke-width:1.2}
+.sv-p{fill:rgba(246,219,227,.65);stroke:var(--sakura);stroke-width:1.2}
+.sv-v{fill:rgba(228,223,245,.7);stroke:var(--fuji);stroke-width:1.2}
+.sv-a{fill:rgba(216,239,242,.7);stroke:var(--asagi);stroke-width:1.2}
+.sv-y{fill:rgba(247,233,207,.7);stroke:var(--yamabuki);stroke-width:1.2}
+.sv-t{font-family:'Zen Kaku Gothic New',sans-serif;font-size:11px;fill:#5b5468}
+.sv-tb{font-family:'Shippori Mincho',serif;font-size:12.5px;fill:#4e4759;font-weight:600}
+.sv-ts{font-family:'JetBrains Mono',monospace;font-size:9.5px;fill:#8a8296}
+.sv-l{stroke:var(--sumi-3);stroke-width:1.2;fill:none}
+.flow{stroke-dasharray:7 6;animation:dash 1.6s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-26}}
+
+/* ========= Tab ========= */
+.tabs{display:flex;gap:8px;margin:26px 0 0;flex-wrap:wrap}
+.tab{font-family:var(--disp);font-size:13px;letter-spacing:.1em;padding:9px 20px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.7);color:var(--sumi-2);cursor:pointer;transition:.4s}
+.tab:hover{border-color:var(--sakura);color:var(--sumi)}
+.tab.on{background:linear-gradient(135deg,var(--sakura),var(--fuji));color:#fff;border-color:transparent;box-shadow:0 8px 24px -10px rgba(190,140,190,.7)}
+.pane{display:none;animation:fu .6s ease both}
+.pane.on{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ========= 真题 ========= */
+.q{background:rgba(255,255,255,.74);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;margin:18px 0;overflow:hidden;transition:.45s;box-shadow:var(--shadow)}
+.q:hover{border-color:rgba(162,148,214,.45)}
+.q-h{padding:20px 24px;cursor:pointer;display:flex;align-items:flex-start;gap:16px;user-select:none}
+.q-n{font-family:var(--disp);font-size:22px;color:transparent;-webkit-text-stroke:1px var(--fuji);flex:none;line-height:1.2;min-width:34px}
+.q-q{flex:1;font-size:14.4px;line-height:1.95;color:#584f66}
+.q-a{flex:none;font-family:var(--disp);font-size:12px;letter-spacing:.2em;color:var(--sumi-3);border:1px solid var(--line);border-radius:999px;padding:4px 12px;transition:.4s}
+.q.open .q-a{background:linear-gradient(135deg,var(--sakura),var(--fuji));color:#fff;border-color:transparent}
+.q-b{max-height:0;overflow:hidden;transition:max-height .7s cubic-bezier(.2,.8,.3,1)}
+.q-in{padding:20px 24px 24px;border-top:1px dashed var(--line)}
+.opt{margin:10px 0;padding:11px 16px;border-radius:10px;font-size:13.8px;line-height:1.9;border:1px solid transparent}
+.opt-t{background:rgba(216,239,242,.4);border-color:rgba(124,195,207,.4)}
+.opt-f{background:rgba(246,219,227,.42);border-color:rgba(227,154,176,.45)}
+.opt-k{font-family:var(--disp);font-weight:600;margin-right:8px}
+.opt-t .opt-k{color:#3f8a8f}
+.opt-f .opt-k{color:#c26b8a}
+.sub{color:var(--sumi-2);font-size:13px}
+
+/* ========= 结语 ========= */
+.fin{text-align:center;padding:120px 0 40px}
+.fin .k{font-family:var(--disp);font-size:clamp(48px,10vw,90px);background:linear-gradient(150deg,var(--fuji),var(--sakura));-webkit-background-clip:text;background-clip:text;color:transparent;animation:breathe 8s ease-in-out infinite}
+.fin p{color:var(--sumi-3);font-weight:300;font-size:13.5px;letter-spacing:.16em;line-height:2.4}
+
+.rv{opacity:0;transform:translateY(26px);transition:opacity 1s cubic-bezier(.2,.8,.3,1),transform 1s cubic-bezier(.2,.8,.3,1)}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+::selection{background:rgba(227,154,176,.35)}
+::-webkit-scrollbar{width:9px}
+::-webkit-scrollbar-track{background:var(--washi-2)}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--sakura),var(--fuji));border-radius:9px}
+</style>
+</head>
+<body>
+
+<div class="progress" id="pg"></div>
+
+<div class="bg">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b4"></div><div class="blob b5"></div>
+  <div class="rays"><u style="left:8%"></u><u style="left:44%;animation-delay:-6s"></u><u style="left:78%;animation-delay:-11s"></u></div>
+  <div class="rain" id="rain"></div>
+  <div class="bokeh" id="bokeh"></div>
+  <div class="grain"></div>
+</div>
+<canvas id="petals"></canvas>
+
+<nav class="rail" id="rail">
+  <a href="#c0"><b></b><span>序</span></a>
+  <a href="#c1"><b></b><span>一 · 本質</span></a>
+  <a href="#c2"><b></b><span>二 · 管理</span></a>
+  <a href="#c3"><b></b><span>三 · 共有</span></a>
+  <a href="#c4"><b></b><span>四 · 二界</span></a>
+  <a href="#c5"><b></b><span>五 · 切替</span></a>
+  <a href="#c6"><b></b><span>六 · 真題</span></a>
+  <a href="#c7"><b></b><span>終 · 速查</span></a>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="thread"></div>
+  <div class="kanji">糸</div>
+  <div class="furi">いと・スレッド</div>
+  <h1>线程的本质</h1>
+  <p class="lead">
+    进程给了它一个可以居住的世界，<br>却没有给它一个可以独处的房间。<br>
+    它共享一切——地址、文件、信号、名字，<br>唯独寄存器与那一小段栈，是它自己的。<br>
+    <span style="color:var(--sumi-3);font-size:14px">这份笔记，把教材说的话，和机器真正在做的事，分开来讲。</span>
+  </p>
+  <div class="meta">
+    <span class="chip">408 · 第二章</span>
+    <span class="chip">1000题 22–33</span>
+    <span class="chip">应试口径 × 真实实现</span>
+    <span class="chip">Linux / NT / Go / Loom</span>
+  </div>
+  <div class="scrolltip">SCROLL</div>
+</header>
+
+<!-- ===== 序 ===== -->
+<section class="chap" id="c0">
+  <div class="chap-head rv"><div class="chap-num">序</div>
+    <div><div class="chap-jp">はじめに</div><h2>两套语言，一件事情</h2></div></div>
+  <div class="chap-rule rv"></div>
+  <p class="chap-intro rv">
+    做这一章的题，最容易踩的坑不是"不会"，而是"会得太多"或"会得太少"。<br>
+    教材给你一套干净的二分法：<b>进程是资源分配的基本单位，线程是 CPU 调度的基本单位</b>。这套说法必须背，考场按它作答。<br>
+    但真实的 Linux 里，<span class="mk">根本没有"线程"这种内核对象</span>——只有 <code>task_struct</code>，进程和线程只是共享程度不同的同一种东西。<br>
+    这份笔记全程双轨：<span style="color:#a05470">粉色 = 应试口径</span>，<span style="color:#3f7f8a">青色 = 真实工程</span>。冲突处会明确告诉你考场该写哪个。
+  </p>
+
+  <div class="duo rv">
+    <div class="card card-e">
+      <div class="card-t"><span class="tag tag-e">应试</span>教材的世界</div>
+      <p style="margin-top:4px">进程 = 资源容器 + PCB；线程 = 执行流 + TCB。一个 PCB 下挂若干 TCB。用户级线程在用户态被线程库调度，内核不可见；内核级线程被内核调度，内核可见。</p>
+      <p>模型干净、边界清晰、便于命题。<b>这就是你要背的。</b></p>
+    </div>
+    <div class="card card-r">
+      <div class="card-t"><span class="tag tag-r">真实</span>机器的世界</div>
+      <p style="margin-top:4px">Linux 只有 <code>task_struct</code>。<code>fork()</code>、<code>vfork()</code>、<code>pthread_create()</code> 走的是<b>同一个</b> <code>clone()</code> 系统调用，只是标志位不同。</p>
+      <p>"进程"是把一组 task 用 <code>tgid</code> 绑成一束，再让它们指向同一份 <code>mm_struct</code> / <code>files_struct</code> / <code>signal_struct</code>——语义是<b>拼</b>出来的。</p>
+    </div>
+  </div>
+
+  <div class="fig rv">
+    <div class="fig-t">两套模型的对照</div>
+    <svg viewBox="0 0 860 260">
+      <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#a49dae"/></marker></defs>
+      <text class="sv-tb" x="20" y="20">教材模型</text>
+      <rect class="sv-p" x="20" y="34" width="360" height="196" rx="14"/>
+      <text class="sv-t" x="36" y="58">进程 P（资源分配单位）</text>
+      <rect class="sv-box" x="36" y="70" width="150" height="34" rx="8"/><text class="sv-ts" x="48" y="91">PCB</text>
+      <rect class="sv-box" x="200" y="70" width="164" height="34" rx="8"/><text class="sv-ts" x="212" y="91">地址空间 / 文件表</text>
+      <rect class="sv-v" x="36" y="120" width="98" height="92" rx="10"/><text class="sv-ts" x="50" y="146">TCB1</text><text class="sv-ts" x="50" y="166">PC/寄存器</text><text class="sv-ts" x="50" y="186">栈指针</text>
+      <rect class="sv-v" x="146" y="120" width="98" height="92" rx="10"/><text class="sv-ts" x="160" y="146">TCB2</text><text class="sv-ts" x="160" y="166">PC/寄存器</text><text class="sv-ts" x="160" y="186">栈指针</text>
+      <rect class="sv-v" x="256" y="120" width="98" height="92" rx="10"/><text class="sv-ts" x="270" y="146">TCB3</text><text class="sv-ts" x="270" y="166">PC/寄存器</text><text class="sv-ts" x="270" y="186">栈指针</text>
+      <path class="sv-l flow" d="M395 130 L455 130" marker-end="url(#ar)"/>
+      <text class="sv-tb" x="470" y="20">Linux 真实模型</text>
+      <rect class="sv-a" x="470" y="34" width="370" height="196" rx="14"/>
+      <text class="sv-t" x="486" y="58">thread group（tgid = 1024）</text>
+      <rect class="sv-box" x="486" y="70" width="106" height="70" rx="10"/><text class="sv-ts" x="496" y="90">task_struct</text><text class="sv-ts" x="496" y="108">pid 1024</text><text class="sv-ts" x="496" y="126">tgid 1024</text>
+      <rect class="sv-box" x="602" y="70" width="106" height="70" rx="10"/><text class="sv-ts" x="612" y="90">task_struct</text><text class="sv-ts" x="612" y="108">pid 1025</text><text class="sv-ts" x="612" y="126">tgid 1024</text>
+      <rect class="sv-box" x="718" y="70" width="106" height="70" rx="10"/><text class="sv-ts" x="728" y="90">task_struct</text><text class="sv-ts" x="728" y="108">pid 1026</text><text class="sv-ts" x="728" y="126">tgid 1024</text>
+      <path class="sv-l" d="M539 140 L539 168 M655 140 L655 168 M771 140 L771 168"/>
+      <rect class="sv-y" x="486" y="168" width="338" height="46" rx="10"/>
+      <text class="sv-t" x="502" y="188">共享 mm_struct / files_struct / signal_struct</text>
+      <text class="sv-ts" x="502" y="206">（靠引用计数指向同一份，不是复制）</text>
+    </svg>
+    <div class="fig-c">左：干净的两层结构　右：一束共享程度极高的 task</div>
+  </div>
+</section>
+
+<!-- ===== 一 ===== -->
+<section class="chap" id="c1">
+  <div class="chap-head rv"><div class="chap-num">一</div>
+    <div><div class="chap-jp">ほんしつ</div><h2>线程的本质</h2></div></div>
+  <div class="chap-rule rv"></div>
+  <p class="chap-intro rv">要理解线程，最快的路径是理解 <code>clone()</code>。因为在 Linux 眼里，"创建进程"和"创建线程"是<b>同一个动作</b>，区别只在于——你告诉内核，新的执行流要和旧的共享多少东西。</p>
+
+  <h3 class="rv">1 · clone() 才是唯一的真相</h3>
+  <div class="pre-t rv">FORK — 几乎什么都不共享</div>
+  <pre class="rv"><code><span class="c-f">clone</span>(child_stack=<span class="c-n">0</span>,
+      flags=<span class="c-k">CLONE_CHILD_CLEARTID</span>|<span class="c-k">CLONE_CHILD_SETTID</span>|<span class="c-k">SIGCHLD</span>,
+      child_tidptr=0x7fec70651a10)   <span class="c-c">// SIGCHLD：子进程死时通知父进程</span></code></pre>
+
+  <div class="pre-t rv">PTHREAD_CREATE — glibc NPTL 的标志组合</div>
+  <pre class="rv"><code><span class="c-k">const int</span> clone_flags = (<span class="c-k">CLONE_VM</span>      <span class="c-c">// 共享地址空间 ← 最本质的一条</span>
+                    | <span class="c-k">CLONE_FS</span>      <span class="c-c">// 共享 cwd / root / umask</span>
+                    | <span class="c-k">CLONE_FILES</span>   <span class="c-c">// 共享文件描述符表</span>
+                    | <span class="c-k">CLONE_SYSVSEM</span> <span class="c-c">// 共享 SysV 信号量 undo</span>
+                    | <span class="c-k">CLONE_SIGHAND</span> <span class="c-c">// 共享信号处理函数表</span>
+                    | <span class="c-k">CLONE_THREAD</span>  <span class="c-c">// 加入同一 thread group ← POSIX「同一进程」</span>
+                    | <span class="c-k">CLONE_SETTLS</span>  <span class="c-c">// 设置 TLS（fs base）</span>
+                    | <span class="c-k">CLONE_PARENT_SETTID</span>
+                    | <span class="c-k">CLONE_CHILD_CLEARTID</span> | <span class="c-n">0</span>);</code></pre>
+
+  <div class="fig rv">
+    <div class="fig-t">一个 clone()，两种结局</div>
+    <svg viewBox="0 0 860 330">
+      <defs><marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#a49dae"/></marker></defs>
+      <rect class="sv-box" x="330" y="10" width="200" height="46" rx="12"/>
+      <text class="sv-tb" x="368" y="32">clone(flags, ...)</text>
+      <text class="sv-ts" x="346" y="48">kernel/fork.c: copy_process()</text>
+      <path class="sv-l flow" d="M400 60 L230 108" marker-end="url(#ar2)"/>
+      <path class="sv-l flow" d="M460 60 L630 108" marker-end="url(#ar2)"/>
+      <rect class="sv-p" x="40" y="110" width="350" height="200" rx="14"/>
+      <text class="sv-tb" x="58" y="134">不带 CLONE_VM / CLONE_THREAD</text>
+      <text class="sv-t" x="58" y="158">复制一份 mm_struct（写时复制）</text>
+      <text class="sv-t" x="58" y="180">新的 pid，新的 tgid</text>
+      <text class="sv-t" x="58" y="202">独立 fd 表、独立信号处理</text>
+      <rect class="sv-box" x="58" y="216" width="140" height="72" rx="10"/>
+      <text class="sv-ts" x="70" y="238">父 mm_struct</text><text class="sv-ts" x="70" y="258">页表 A</text><text class="sv-ts" x="70" y="278">mm_users=1</text>
+      <rect class="sv-box" x="214" y="216" width="158" height="72" rx="10"/>
+      <text class="sv-ts" x="226" y="238">子 mm_struct（新）</text><text class="sv-ts" x="226" y="258">页表 B（COW）</text><text class="sv-ts" x="226" y="278">mm_users=1</text>
+      <text class="sv-tb" x="150" y="308" fill="#a05470">= 进程</text>
+      <rect class="sv-a" x="470" y="110" width="350" height="200" rx="14"/>
+      <text class="sv-tb" x="488" y="134">带 CLONE_VM + CLONE_THREAD</text>
+      <text class="sv-t" x="488" y="158">指向同一个 mm_struct（仅加引用）</text>
+      <text class="sv-t" x="488" y="180">新的 pid，tgid 沿用组长</text>
+      <text class="sv-t" x="488" y="202">共享 fd 表、共享信号处理</text>
+      <rect class="sv-y" x="560" y="216" width="180" height="72" rx="10"/>
+      <text class="sv-ts" x="574" y="238">同一 mm_struct</text><text class="sv-ts" x="574" y="258">同一份页表</text><text class="sv-ts" x="574" y="278">mm_users = 2</text>
+      <path class="sv-l" d="M520 216 L556 240 M780 216 L744 240"/>
+      <text class="sv-tb" x="600" y="308" fill="#3f7f8a">= 线程</text>
+    </svg>
+    <div class="fig-c">"是线程还是进程"，全由这几个 flag 决定</div>
+  </div>
+
+  <div class="note rv">
+    <b>约束记忆点</b>　自 Linux 2.5.35 起，<code>CLONE_THREAD</code> 必须同时带 <code>CLONE_SIGHAND</code>，否则返回 <code>EINVAL</code>；自 2.6.0 起 <code>CLONE_SIGHAND</code> 又要求带 <code>CLONE_VM</code>。所以三者事实上绑成一串。<br>
+    反过来，<b>只带 <code>CLONE_VM</code> 不带 <code>CLONE_THREAD</code> 是合法的</b>：共享地址空间，但不属于同一线程组、信号语义独立。这是"线程 / 进程"之间真实存在的中间态——教材的二分法在这里就已经不够用了。
+  </div>
+
+  <h3 class="rv">2 · tgid 与 pid：POSIX 语义是怎么拼出来的</h3>
+  <div class="tw rv"><table>
+    <thead><tr><th>概念</th><th>内核字段</th><th>用户态接口</th><th>多线程进程中的值</th></tr></thead>
+    <tbody>
+      <tr><td>POSIX 线程 ID</td><td><code>task_struct.pid</code></td><td><code>gettid()</code></td><td>每个线程各不相同</td></tr>
+      <tr><td>POSIX 进程 ID</td><td><code>task_struct.tgid</code></td><td><code>getpid()</code></td><td>全组相同 = 主线程的 pid</td></tr>
+      <tr><td>线程组组长</td><td><code>group_leader</code></td><td>—</td><td>指向主线程的 task_struct</td></tr>
+      <tr><td>进程级信号信息</td><td><code>signal_struct</code></td><td>—</td><td>整组共享一份</td></tr>
+      <tr><td>信号处理函数表</td><td><code>sighand_struct</code></td><td><code>sigaction()</code></td><td>整组共享一份</td></tr>
+      <tr><td>信号屏蔽字</td><td><code>blocked</code></td><td><code>pthread_sigmask()</code></td><td class="no">每线程独立</td></tr>
+    </tbody></table></div>
+  <p class="rv">单线程进程里 <code>pid == tgid</code>；多线程进程里主线程 <code>pid == tgid</code>，其余线程各有独立 <code>pid</code> 但 <code>tgid</code> 相同。<code>getpid()</code> 的内核实现返回的其实是 <code>current-&gt;signal-&gt;pids[PIDTYPE_TGID]</code>（历史上写作 <code>group_leader-&gt;pid</code>，2018 年由 Eric Biederman 引入 <code>PIDTYPE_TGID</code> 重构）。</p>
+  <div class="quote rv">调试常识：eBPF 里 <em>bpf_get_current_pid_tgid()</em> 返回 64 位，<b>低 32 位是 pid（线程），高 32 位是 tgid（进程）</b>。名字和直觉正好相反，这是新手最常翻车的地方。</div>
+
+  <h3 class="rv">3 · Windows NT：线程是真正的一等公民</h3>
+  <div class="fig rv">
+    <div class="fig-t">Windows 的四层对象</div>
+    <svg viewBox="0 0 860 250">
+      <rect class="sv-p" x="30" y="20" width="380" height="210" rx="14"/>
+      <text class="sv-tb" x="48" y="46">EPROCESS · 执行体进程对象</text>
+      <text class="sv-t" x="48" y="70">DirectoryTableBase（顶层页表物理地址）</text>
+      <text class="sv-t" x="48" y="92">VadRoot（虚拟地址描述符树）</text>
+      <text class="sv-t" x="48" y="114">ObjectTable（句柄表）· Token（安全上下文）</text>
+      <text class="sv-t" x="48" y="136">UniqueProcessId · Peb（进程环境块）</text>
+      <rect class="sv-y" x="48" y="152" width="344" height="62" rx="10"/>
+      <text class="sv-tb" x="64" y="176">KPROCESS（内嵌于 EPROCESS.Pcb）</text>
+      <text class="sv-ts" x="64" y="198">线程链表头 · 基准优先级 · 亲和性掩码 · CPU 时间</text>
+      <rect class="sv-a" x="450" y="20" width="380" height="210" rx="14"/>
+      <text class="sv-tb" x="468" y="46">ETHREAD · 执行体线程对象</text>
+      <text class="sv-t" x="468" y="70">IRP 列表 · 模拟访问令牌</text>
+      <text class="sv-t" x="468" y="92">唯一线程 ID · 指向 TEB 的指针</text>
+      <text class="sv-t" x="468" y="114">用户态栈 · 内核态栈</text>
+      <rect class="sv-v" x="468" y="130" width="344" height="84" rx="10"/>
+      <text class="sv-tb" x="484" y="154">KTHREAD（内嵌于 ETHREAD.Tcb）</text>
+      <text class="sv-ts" x="484" y="176">调度器直接操作的就是它</text>
+      <text class="sv-ts" x="484" y="196">线程栈 · 调度信息 · APC · 优先级 · 执行时间</text>
+    </svg>
+    <div class="fig-c">EPROCESS 回答"这是谁、它拥有什么"；KPROCESS 回答"它的线程该怎么跑"</div>
+  </div>
+  <p class="rv">创建流程（WinDbg 下打断点可见）：<code>PspAllocateThread</code> → <code>PspCreateThread</code>（设起始 RIP）→ <code>PspInsertThread</code>（链入进程线程链表）→ <code>KeInitThread</code> → <code>KeStartThread</code>（标记 READY 并插入调度器）→ <code>KiStartUserThread</code>。</p>
+  <div class="note rv"><b>考场用法</b>　当题目说"线程是调度单位、进程是资源分配单位"，你脑子里应该浮现的是 <b>Windows</b>，而不是 Linux。Linux 只是用"共享程度"模拟出了这套语义。</div>
+
+  <h3 class="rv">4 · Solaris：M:N 曾经真的活过，然后死了</h3>
+  <p class="rv">Solaris 9 之前的 <b>T1 libthread</b> 是历史上最著名的 M:N 实践：M 个用户线程复用在 N 个 <b>LWP（轻量级进程）</b> 上，映射关系是<span class="mk">流动的</span>——一个用户线程运行到一半都可能被换到另一个 LWP，而线程库对此无感知。</p>
+  <p class="rv">结果就是：<code>priocntl()</code> 只能改 LWP 的优先级，而用户线程与 LWP 的关系不稳定，于是<b>你根本无法可靠地给某个用户线程设优先级</b>。JVM 改了 LWP 优先级，线程转头就被挪到别的 LWP 上去了。</p>
+  <p class="rv">Solaris 9 起默认换成 <b>T2 libthread</b>，即"更简单、更健壮的 1:1 模型"。旧的 MxN 实现被体面地退役，连术语都废掉了——<code>bound thread</code> / <code>unbound thread</code> 的区分不复存在，因为<b>每个用户线程都有专属 LWP</b>。</p>
+</section>
+
+<!-- ===== 二 ===== -->
+<section class="chap" id="c2">
+  <div class="chap-head rv"><div class="chap-num">二</div>
+    <div><div class="chap-jp">かんり</div><h2>进程怎么管理线程</h2></div></div>
+  <div class="chap-rule rv"></div>
+  <p class="chap-intro rv">"管理"这个词在教材里是 PCB 挂 TCB 的树形结构；在 Linux 里，它其实是<b>一组引用计数</b>。谁还在用这份地址空间、谁还在用这张文件表——数清楚了，管理就完成了。</p>
+
+  <h3 class="rv">1 · PCB / TCB：不存在的两个结构体</h3>
+  <div class="duo rv">
+    <div class="card card-e"><div class="card-t"><span class="tag tag-e">应试</span>PCB + TCB</div>
+      <p style="margin-top:4px">PCB 保存进程级信息（地址空间、文件表、账户信息）；TCB 保存线程级信息（寄存器组、栈指针、线程状态、优先级）。一对多关系。</p></div>
+    <div class="card card-r"><div class="card-t"><span class="tag tag-r">真实</span>只有 task_struct</div>
+      <p style="margin-top:4px">所有"进程级共享信息"都是多个 <code>task_struct</code> <b>用指针指向同一个带引用计数的结构体</b>：<code>mm_struct</code>、<code>files_struct</code>、<code>fs_struct</code>、<code>signal_struct</code>、<code>sighand_struct</code>。</p></div>
+  </div>
+
+  <h4 class="rv">mm_struct 的双计数器：为什么要两个？</h4>
+  <div class="tw rv"><table>
+    <thead><tr><th>字段</th><th>含义</th><th>操作函数</th><th>归零时</th></tr></thead>
+    <tbody>
+      <tr><td><code>mm_users</code></td><td><b>真实用户</b>数：有多少个用户空间线程在用这份地址空间</td><td><code>mmget()</code> / <code>mmput()</code></td><td>释放一次 <code>mm_count</code></td></tr>
+      <tr><td><code>mm_count</code></td><td><b>主引用计数</b>：所有 <code>mm_users</code> 整体只算 <b>1</b>，再加上所有"惰性借用者"</td><td><code>mmgrab()</code> / <code>mmdrop()</code></td><td>才真正 free 掉 mm_struct</td></tr>
+    </tbody></table></div>
+
+  <div class="fig rv">
+    <div class="fig-t">两个计数器与 lazy TLB</div>
+    <svg viewBox="0 0 860 300">
+      <defs><marker id="ar3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#a49dae"/></marker></defs>
+      <rect class="sv-y" x="300" y="110" width="250" height="100" rx="14"/>
+      <text class="sv-tb" x="326" y="140">mm_struct（一份）</text>
+      <text class="sv-t" x="326" y="166">mm_users = 2</text>
+      <text class="sv-t" x="326" y="190">mm_count = 2</text>
+      <rect class="sv-v" x="40" y="40" width="200" height="60" rx="12"/>
+      <text class="sv-tb" x="58" y="66">线程 A（用户态）</text><text class="sv-ts" x="58" y="86">task-&gt;mm != NULL</text>
+      <rect class="sv-v" x="40" y="130" width="200" height="60" rx="12"/>
+      <text class="sv-tb" x="58" y="156">线程 B（用户态）</text><text class="sv-ts" x="58" y="176">task-&gt;mm != NULL</text>
+      <rect class="sv-a" x="40" y="220" width="200" height="60" rx="12"/>
+      <text class="sv-tb" x="58" y="246">内核线程 kthread</text><text class="sv-ts" x="58" y="266">task-&gt;mm = NULL</text>
+      <path class="sv-l flow" d="M244 70 L296 130" marker-end="url(#ar3)"/>
+      <path class="sv-l flow" d="M244 160 L296 160" marker-end="url(#ar3)"/>
+      <path class="sv-l flow" d="M244 250 L296 190" marker-end="url(#ar3)"/>
+      <text class="sv-ts" x="238" y="288">active_mm 惰性借用（mmgrab）</text>
+      <rect class="sv-box" x="600" y="80" width="230" height="160" rx="14"/>
+      <text class="sv-tb" x="618" y="106">为什么要两个计数器</text>
+      <text class="sv-t" x="618" y="132">内核线程没有自己的地址空间，</text>
+      <text class="sv-t" x="618" y="154">但运行时仍需页表访问内核区，</text>
+      <text class="sv-t" x="618" y="176">于是借用上一个 task 的 mm，</text>
+      <text class="sv-t" x="618" y="198">记在 active_mm 里并 mmgrab。</text>
+      <text class="sv-t" x="618" y="222" font-weight="700">借用期间绝不能被释放</text>
+    </svg>
+    <div class="fig-c">mm_users 归零 ≠ 释放；mm_count 归零才释放</div>
+  </div>
+
+  <div class="quote rv">Linus 的原话可以当口诀记：<code>mm_users</code> 是"真实的地址空间使用者"，<code>mm_count</code> 是"惰性（匿名）使用者的数量，若存在任何真实使用者则再加一"。<br><span style="font-size:13px;color:var(--sumi-3)">（2020 年内核文档还专门修过一个笔误：懒惰 mm 的"僵尸"是在 <b>mm_count</b> 归零时释放，旧文档误写成了 mm_users。）</span></div>
+
+  <h3 class="rv">2 · 线程创建的完整路径</h3>
+  <div class="fig rv">
+    <div class="fig-t">pthread_create 从用户态到内核态</div>
+    <svg viewBox="0 0 860 300">
+      <defs><marker id="ar4" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#a49dae"/></marker></defs>
+      <line x1="30" y1="150" x2="830" y2="150" stroke="#e7dee4" stroke-width="1"/>
+      <text class="sv-ts" x="30" y="30">用户态 · glibc NPTL</text>
+      <text class="sv-ts" x="30" y="290">内核态</text>
+      <rect class="sv-p" x="40" y="52" width="150" height="66" rx="12"/>
+      <text class="sv-tb" x="54" y="78">1 pthread_create</text><text class="sv-ts" x="54" y="98">读 attr / 栈大小</text>
+      <rect class="sv-p" x="212" y="52" width="160" height="66" rx="12"/>
+      <text class="sv-tb" x="226" y="78">2 分配线程栈</text><text class="sv-ts" x="226" y="98">mmap 匿名映射 + guard</text>
+      <rect class="sv-p" x="394" y="52" width="150" height="66" rx="12"/>
+      <text class="sv-tb" x="408" y="78">3 布置 TCB</text><text class="sv-ts" x="408" y="98">struct pthread / dtv</text>
+      <rect class="sv-p" x="566" y="52" width="150" height="66" rx="12"/>
+      <text class="sv-tb" x="580" y="78">4 create_thread</text><text class="sv-ts" x="580" y="98">拼装 clone_flags</text>
+      <path class="sv-l flow" d="M192 85 L208 85" marker-end="url(#ar4)"/>
+      <path class="sv-l flow" d="M374 85 L390 85" marker-end="url(#ar4)"/>
+      <path class="sv-l flow" d="M546 85 L562 85" marker-end="url(#ar4)"/>
+      <path class="sv-l flow" d="M640 120 L640 178" marker-end="url(#ar4)"/>
+      <text class="sv-ts" x="648" y="150">syscall 陷入</text>
+      <rect class="sv-a" x="566" y="180" width="150" height="66" rx="12"/>
+      <text class="sv-tb" x="580" y="206">5 clone()</text><text class="sv-ts" x="580" y="226">kernel/fork.c</text>
+      <rect class="sv-a" x="366" y="180" width="180" height="66" rx="12"/>
+      <text class="sv-tb" x="380" y="206">6 copy_process()</text><text class="sv-ts" x="380" y="226">task_struct + 内核栈16KB</text>
+      <rect class="sv-a" x="166" y="180" width="180" height="66" rx="12"/>
+      <text class="sv-tb" x="180" y="206">7 按 flags 共享资源</text><text class="sv-ts" x="180" y="226">mm/files/sighand 只加引用</text>
+      <rect class="sv-y" x="40" y="180" width="106" height="66" rx="12"/>
+      <text class="sv-tb" x="54" y="206">8 入队</text><text class="sv-ts" x="54" y="226">wake_up_new_task</text>
+      <path class="sv-l flow" d="M562 213 L550 213" marker-end="url(#ar4)"/>
+      <path class="sv-l flow" d="M362 213 L350 213" marker-end="url(#ar4)"/>
+      <path class="sv-l flow" d="M162 213 L150 213" marker-end="url(#ar4)"/>
+    </svg>
+    <div class="fig-c">注意第 7 步：共享的资源"只加引用计数"，这才是线程比进程轻的根本原因</div>
+  </div>
+
+  <h3 class="rv">3 · pthread_join 的真相：一个 futex</h3>
+  <div class="quote rv">man 手册的原文逻辑：当一个 <code>clear_child_tid</code> 非空的线程终止时，若它与其他线程共享内存，内核就在该地址写入 0，并执行 <em>futex(clear_child_tid, FUTEX_WAKE, 1, ...)</em>。</div>
+  <div class="fig rv">
+    <div class="fig-t">join 的时序</div>
+    <svg viewBox="0 0 860 260">
+      <defs>
+        <marker id="ar5" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#e39ab0"/></marker>
+        <marker id="ar6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7cc3cf"/></marker>
+      </defs>
+      <text class="sv-tb" x="60" y="26">主线程</text>
+      <text class="sv-tb" x="400" y="26">futex 变量</text>
+      <text class="sv-tb" x="700" y="26">子线程</text>
+      <line x1="90" y1="40" x2="90" y2="240" stroke="#e39ab0" stroke-width="1.5"/>
+      <line x1="440" y1="40" x2="440" y2="240" stroke="#dfae63" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <line x1="740" y1="40" x2="740" y2="240" stroke="#7cc3cf" stroke-width="1.5"/>
+      <rect class="sv-y" x="380" y="52" width="120" height="30" rx="8"/>
+      <text class="sv-ts" x="398" y="72">tid = 1025</text>
+      <path class="sv-l flow" d="M92 110 L436 110" stroke="#e39ab0" marker-end="url(#ar5)"/>
+      <text class="sv-t" x="140" y="102">pthread_join → FUTEX_WAIT（值仍为 1025 则阻塞）</text>
+      <rect class="sv-p" x="30" y="122" width="126" height="30" rx="8"/>
+      <text class="sv-ts" x="44" y="142">主线程睡眠</text>
+      <path class="sv-l flow" d="M736 170 L444 170" stroke="#7cc3cf" marker-end="url(#ar6)"/>
+      <text class="sv-t" x="470" y="162">子线程退出 → 内核清零 + FUTEX_WAKE</text>
+      <rect class="sv-a" x="640" y="122" width="180" height="30" rx="8"/>
+      <text class="sv-ts" x="656" y="142">exit → clear_child_tid</text>
+      <rect class="sv-y" x="380" y="182" width="120" height="30" rx="8"/>
+      <text class="sv-ts" x="410" y="202">tid = 0</text>
+      <path class="sv-l flow" d="M436 224 L96 224" stroke="#e39ab0" marker-end="url(#ar5)"/>
+      <text class="sv-t" x="150" y="216">主线程被唤醒，join 返回</text>
+    </svg>
+    <div class="fig-c">没有魔法，只有一个整数和一次 futex 唤醒</div>
+  </div>
+  <div class="note rv"><b>细节彩蛋</b>　如果线程是被信号杀死的（<code>PF_SIGNALED</code>）而不是正常 <code>_exit</code>，内核<b>不会</b>清 <code>clear_child_tid</code>——为的是让 core dump 保留 NPTL 数据结构的完整状态。</div>
+
+  <h3 class="rv">4 · 线程组内的信号</h3>
+  <div class="tw rv"><table>
+    <thead><tr><th>类别</th><th>粒度</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>信号处理函数（disposition）</td><td class="no">进程级共享</td><td>共享 <code>sighand_struct</code>。未被处理的信号会影响整个线程组（终止 / 停止 / 继续 / 忽略）</td></tr>
+      <tr><td>信号屏蔽字（blocked mask）</td><td class="yes">每线程私有</td><td><code>sigprocmask()</code> / <code>pthread_sigmask()</code></td></tr>
+      <tr><td>进程定向信号 <code>kill()</code></td><td>投给线程组</td><td>从<b>未阻塞该信号的线程中任选一个</b>投递</td></tr>
+      <tr><td>线程定向信号 <code>tgkill()</code></td><td>投给特定线程</td><td>精确定位到某个 tid</td></tr>
+      <tr><td>alternate signal stack</td><td class="yes">每线程私有</td><td><code>sigaltstack()</code></td></tr>
+    </tbody></table></div>
+  <p class="rv">退出也分两级：<code>_exit()</code> 只终止<b>当前线程</b>；<code>exit_group()</code> 终止<b>整个线程组</b>。C 库的 <code>exit()</code> 和 <code>main</code> 的 <code>return</code> 触发的都是后者——这就是"进程退出时所有线程一起死"的机制。</p>
+
+  <h3 class="rv">5 · 线程栈：不是常数，是 RLIMIT_STACK</h3>
+  <div class="warn rv"><b>常见误记</b>　"glibc 线程栈默认 8MB"——这句话只在 <code>RLIMIT_STACK</code> 取常见默认值 8MB 时成立。真相是：<b>非主线程的栈大小由主线程的 <code>RLIMIT_STACK</code> 决定</b>，实际落在 2–10 MB 区间。可用 <code>pthread_attr_setstacksize()</code> 修改。</div>
+  <ul class="rv">
+    <li>主线程栈由内核动态增长；非主线程栈由 glibc 用 <code>mmap</code> <b>预先分配固定大小</b>的匿名映射。</li>
+    <li>栈底带一个 <b>guard page</b>（<code>PROT_NONE</code>），触碰即 SIGSEGV，用于检测栈溢出。</li>
+    <li>8 MB 只是<b>虚拟地址空间</b>被预留，物理页惰性分配（缺页时才映射）。</li>
+  </ul>
+  <div class="tw rv"><table>
+    <thead><tr><th>线程数上限</th><th>来源</th><th>影响</th></tr></thead>
+    <tbody>
+      <tr><td><code>/proc/sys/kernel/threads-max</code></td><td>系统级 task 总数上限</td><td>全局</td></tr>
+      <tr><td><code>vm.max_map_count</code></td><td>每进程 VMA 数上限</td><td>每个线程栈是一个映射</td></tr>
+      <tr><td>虚拟地址空间耗尽</td><td>32 位系统尤其致命</td><td>用户态只有 2GB 时，8MB 栈大约 200–400 个线程就满了；64 位基本无此限</td></tr>
+    </tbody></table></div>
+  <div class="note rv"><b>内存开销速记</b>　x86-64 内核栈 <code>THREAD_SIZE</code> = <b>16 KB</b>（2 页）；<code>task_struct</code> 本身约 <b>6–10 KB</b>。对照：Go 的 goroutine 起始栈只有 <b>2 KB</b>。差了三个数量级——这就是第 23 题 B 项的量化依据。</div>
+</section>
+
+<!-- ===== 三 ===== -->
+<section class="chap" id="c3">
+  <div class="chap-head rv"><div class="chap-num">三</div>
+    <div><div class="chap-jp">きょうゆう と こどく</div><h2>共享的，与私有的</h2></div></div>
+  <div class="chap-rule rv"></div>
+  <p class="chap-intro rv">这一节是本章的分数密集区。要记的不只是清单，更是<b>"私有"这个词的两种含义</b>——有些是硬件隔离的私有（不同进程的地址空间），有些只是约定上的私有（同进程线程的栈）。分不清这两者，第 32 题和第 33 题就会错。</p>
+
+  <h3 class="rv">1 · 完整清单</h3>
+  <div class="tw rv"><table>
+    <thead><tr><th>资源</th><th>归属</th><th>真实实现 / 备注</th></tr></thead>
+    <tbody>
+      <tr><td>代码段 / 数据段 / BSS</td><td class="no">共享</td><td>同一 <code>mm_struct</code></td></tr>
+      <tr><td>堆 heap</td><td class="no">共享</td><td>malloc 出来的内存所有线程可见</td></tr>
+      <tr><td>mmap 区（含<b>所有线程的栈</b>）</td><td class="no">共享</td><td>栈也在这里</td></tr>
+      <tr><td>全局变量 / 静态变量</td><td class="no">共享</td><td>—</td></tr>
+      <tr><td>打开文件描述符表</td><td class="no">共享</td><td><code>files_struct</code>（<code>CLONE_FILES</code>）</td></tr>
+      <tr><td>cwd / 根目录 / umask</td><td class="no">共享</td><td><code>fs_struct</code>（<code>CLONE_FS</code>）</td></tr>
+      <tr><td>信号处理函数</td><td class="no">共享</td><td><code>sighand_struct</code></td></tr>
+      <tr><td>用户 ID / 组 ID</td><td class="no">共享</td><td>进程级凭证</td></tr>
+      <tr><td>System V IPC 资源</td><td class="no">共享</td><td>共享内存 / 信号量 / 消息队列</td></tr>
+      <tr><td>程序计数器 PC / 通用寄存器组</td><td class="yes">私有</td><td>切换时保存恢复</td></tr>
+      <tr><td>用户态栈</td><td class="yes">私有（逻辑上）</td><td class="no">物理上在共享地址空间内</td></tr>
+      <tr><td>内核态栈</td><td class="yes">私有</td><td>每个 task 独立，x86-64 默认 16 KB</td></tr>
+      <tr><td>TLS 线程局部存储</td><td class="yes">私有</td><td><code>%fs</code> / <code>TPIDR_EL0</code></td></tr>
+      <tr><td><code>errno</code></td><td class="yes">私有</td><td>本质就是一个 TLS 变量</td></tr>
+      <tr><td>信号屏蔽字</td><td class="yes">私有</td><td>—</td></tr>
+      <tr><td>调度优先级 / 调度策略</td><td class="yes">私有</td><td class="no">教材常误说成进程级！Linux 里每个 task 独立设置</td></tr>
+      <tr><td>alternate signal stack</td><td class="yes">私有</td><td><code>sigaltstack()</code></td></tr>
+    </tbody></table></div>
+
+  <h3 class="rv">2 · 关键辨析：线程栈到底能不能互相访问？</h3>
+  <div class="duo rv">
+    <div class="card card-e"><div class="card-t"><span class="tag tag-e">教材口径</span>"无法共享栈空间"</div>
+      <p style="margin-top:4px">线程有自己私有的栈，各线程之间无法共享栈空间。<br><span style="color:var(--sumi-3);font-size:13px">（1000题第 32 题第 IV 项就是这么说的，而它是<b>错误</b>选项。）</span></p></div>
+    <div class="card card-r"><div class="card-t"><span class="tag tag-r">严格结论</span>物理上完全可以</div>
+      <p style="margin-top:4px">所有线程栈都是<b>同一地址空间</b>里的普通匿名映射。只要拿到指针（比如把局部变量地址传给另一个线程），读写<b>合法且可行</b>，没有任何硬件保护阻止它。</p></div>
+  </div>
+  <div class="quote rv">栈是<b>逻辑上 / 约定上</b>私有的——每个线程有独立的栈指针，正常编程不互相访问；<br>但<b>物理上并不隔离</b>，不存在地址空间层面的保护。<br>对比进程：不同进程的栈在不同地址空间，<b>无法</b>直接互访，必须走 IPC。</div>
+
+  <div class="fig rv">
+    <div class="fig-t">同一地址空间里的三个栈</div>
+    <svg viewBox="0 0 860 300">
+      <defs><marker id="ar7" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c26b8a"/></marker></defs>
+      <rect class="sv-box" x="180" y="20" width="500" height="260" rx="14"/>
+      <text class="sv-tb" x="200" y="46">进程的虚拟地址空间（一份 mm_struct）</text>
+      <rect class="sv-p" x="200" y="60" width="460" height="30" rx="8"/>
+      <text class="sv-ts" x="216" y="80">代码段 .text（共享，只读）</text>
+      <rect class="sv-p" x="200" y="96" width="460" height="30" rx="8"/>
+      <text class="sv-ts" x="216" y="116">数据段 .data / .bss（共享，全局变量在此）</text>
+      <rect class="sv-p" x="200" y="132" width="460" height="30" rx="8"/>
+      <text class="sv-ts" x="216" y="152">堆 heap（共享，malloc 的去处）</text>
+      <rect class="sv-y" x="200" y="172" width="460" height="96" rx="10"/>
+      <text class="sv-ts" x="216" y="192">mmap 区域 —— 三个线程栈都在这里</text>
+      <rect class="sv-v" x="216" y="200" width="130" height="56" rx="8"/>
+      <text class="sv-ts" x="230" y="220">线程 A 栈</text><text class="sv-ts" x="230" y="240">+ guard page</text>
+      <rect class="sv-v" x="360" y="200" width="130" height="56" rx="8"/>
+      <text class="sv-ts" x="374" y="220">线程 B 栈</text><text class="sv-ts" x="374" y="240">+ guard page</text>
+      <rect class="sv-v" x="504" y="200" width="130" height="56" rx="8"/>
+      <text class="sv-ts" x="518" y="220">线程 C 栈</text><text class="sv-ts" x="518" y="240">+ guard page</text>
+      <path class="sv-l flow" d="M346 228 L356 228" marker-end="url(#ar7)"/>
+      <path class="sv-l flow" d="M490 228 L500 228" marker-end="url(#ar7)"/>
+      <text class="sv-t" x="700" y="212" fill="#c26b8a">拿到指针</text>
+      <text class="sv-t" x="700" y="232" fill="#c26b8a">就能互相读写</text>
+      <text class="sv-ts" x="700" y="252">（无硬件保护）</text>
+      <text class="sv-ts" x="20" y="120">私有的只有：</text>
+      <text class="sv-ts" x="20" y="142">PC / 寄存器</text>
+      <text class="sv-ts" x="20" y="162">栈指针 SP</text>
+      <text class="sv-ts" x="20" y="182">内核栈</text>
+      <text class="sv-ts" x="20" y="202">TLS / errno</text>
+      <text class="sv-ts" x="20" y="222">信号屏蔽字</text>
+    </svg>
+    <div class="fig-c">"私有"在这里只是一种纪律，不是一堵墙</div>
+  </div>
+
+  <h3 class="rv">3 · TLS：私有是怎么做出来的</h3>
+  <div class="tw rv"><table>
+    <thead><tr><th>架构</th><th>线程指针载体</th><th>访问方式</th></tr></thead>
+    <tbody>
+      <tr><td>x86-64</td><td><code>%fs</code> 段寄存器 / <code>FS_BASE</code> MSR</td><td><code>%fs:offset</code> 寻址；内核用 <code>arch_prctl(ARCH_SET_FS,…)</code> 设置，也可用 <code>rdfsbase</code> 读</td></tr>
+      <tr><td>ARM64</td><td><code>TPIDR_EL0</code> 专用寄存器</td><td><code>mrs &lt;reg&gt;, TPIDR_EL0</code>，即 <code>__builtin_thread_pointer()</code></td></tr>
+    </tbody></table></div>
+  <p class="rv">编译器把 <code>__thread</code> 变量放进 <code>.tdata</code>（已初始化）和 <code>.tbss</code>（零初始化）节，链接器汇成 <code>PT_TLS</code> 程序头（type = 7）。x86-64 使用 <b>Variant II</b> 布局：</p>
+
+  <div class="fig rv">
+    <div class="fig-t">x86-64 TLS 变体 II 内存布局</div>
+    <svg viewBox="0 0 860 250">
+      <defs><marker id="ar8" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a49dae"/></marker></defs>
+      <line x1="430" y1="20" x2="430" y2="200" stroke="#e39ab0" stroke-width="2" stroke-dasharray="5 4"/>
+      <text class="sv-tb" x="392" y="216" fill="#a05470">%fs 指向此处</text>
+      <text class="sv-ts" x="396" y="234">thread pointer (TP)</text>
+      <rect class="sv-v" x="200" y="60" width="110" height="46" rx="8"/>
+      <text class="sv-ts" x="214" y="80">动态库 TLS 块</text><text class="sv-ts" x="214" y="98">module id = 3</text>
+      <rect class="sv-v" x="318" y="60" width="106" height="46" rx="8"/>
+      <text class="sv-ts" x="332" y="80">主程序 TLS 块</text><text class="sv-ts" x="332" y="98">module id = 1</text>
+      <rect class="sv-y" x="436" y="60" width="230" height="46" rx="8"/>
+      <text class="sv-tb" x="452" y="82">struct pthread（TCB / 线程描述符）</text>
+      <text class="sv-ts" x="452" y="100">tcbhead_t: tcb, dtv, self, stack_guard…</text>
+      <rect class="sv-a" x="676" y="60" width="150" height="46" rx="8"/>
+      <text class="sv-ts" x="690" y="80">dtv 动态线程向量</text><text class="sv-ts" x="690" y="98">按 module id 索引</text>
+      <path class="sv-l flow" d="M666 84 L672 84" marker-end="url(#ar8)"/>
+      <path class="sv-l flow" d="M740 108 L740 150 L370 150 L370 110" marker-end="url(#ar8)"/>
+      <text class="sv-t" x="200" y="48">← 负偏移方向（TPOFF 为负）</text>
+      <text class="sv-t" x="440" y="48">正偏移方向 →</text>
+      <text class="sv-ts" x="200" y="180">errno 的地址 = TP + errno@tpoff（负偏移）</text>
+      <text class="sv-ts" x="200" y="200">errno 宏 → *__errno_location()，返回的正是这个地址</text>
+    </svg>
+    <div class="fig-c">dtv[0] 是计数器，其余是各模块 TLS 块的指针；主程序 module id 恒为 1</div>
+  </div>
+  <div class="note rv"><b>历史八卦</b>　VMware 当年不得不改造 x86 分段虚拟化，正是因为 NPTL 用段寄存器<b>负偏移</b>访问 TLS，触发了保护错误。一个"私有变量"的实现，逼着虚拟化厂商改架构——这是理解 TLS 有多底层的最好例证。</div>
+
+  <h3 class="rv">4 · 共享 fd 带来的并发陷阱</h3>
+  <ul class="rv">
+    <li><b>offset 竞态：</b>同进程线程共享同一个 open file description，也就共享 <code>f_pos</code>。man 手册明确指出：<span class="mk">Linux 3.14 之前</span>，共享同一 open file description 的两方并发 <code>write()</code>，更新文件偏移与写数据<b>不是原子的</b>，两方输出的数据块可能错误地重叠。3.14 修复。</li>
+    <li><b><code>pread()</code> / <code>pwrite()</code>：</b>用<b>调用者提供的 offset</b> 原子完成"定位 + 读写"，且<b>不改变 <code>f_pos</code></b>。man 原话大意：它们在多线程程序里特别有用，允许多个线程在同一 fd 上做 I/O 而不受其他线程改动偏移的影响。</li>
+    <li><b><code>O_APPEND</code>：</b>每次 <code>write()</code> 前把偏移定位到文件末尾，<b>定位与写作为单一原子步骤完成</b>。（NFS 上不保证。）</li>
+  </ul>
+  <div class="tw rv"><table>
+    <thead><tr><th>操作</th><th>产生什么</th><th>offset 是否共享</th></tr></thead>
+    <tbody>
+      <tr><td><code>dup(fd)</code></td><td>新 fd 号，指向<b>同一个</b> open file description</td><td class="no">共享 offset 与状态标志（不共享 close-on-exec）</td></tr>
+      <tr><td>两次 <code>open()</code> 同一文件</td><td>两个<b>独立的</b> open file description</td><td class="yes">各自独立的 offset</td></tr>
+      <tr><td><code>CLONE_FILES</code>（创建线程）</td><td>共享<b>整张 fd 表</b></td><td class="no">开关操作、标志变化双方都可见</td></tr>
+    </tbody></table></div>
+  <div class="warn rv"><b>工程注意</b>　内核对<b>单次</b> <code>send</code> / <code>recv</code> 系统调用是原子的，但对面向流的 TCP，多线程并发 <code>write</code> 同一 socket 可能导致<b>逻辑消息交织</b>——跨多次调用的消息边界必须由应用层加锁或分片来保证。</div>
+</section>
+
+<!-- ===== 四 ===== -->
+<section class="chap" id="c4">
+  <div class="chap-head rv"><div class="chap-num">四</div>
+    <div><div class="chap-jp">ふたつのせかい</div><h2>用户级线程 与 内核级线程</h2></div></div>
+  <div class="chap-rule rv"></div>
+  <p class="chap-intro rv">这一节讲一个失败与复活的故事。M:N 模型在 1990–2000 年代被寄予厚望，然后在 Solaris、FreeBSD、Linux 上<b>全线溃败</b>；二十年后，它以 Go 的 goroutine、Java 的虚拟线程的形态<b>彻底赢了</b>。读懂这个反转，你就真正懂了用户级线程的优势和代价分别在哪。</p>
+
+  <h3 class="rv">1 · 三种模型</h3>
+  <div class="tabs rv" id="tabs">
+    <button class="tab on" data-p="p1">多对一 M:1</button>
+    <button class="tab" data-p="p2">一对一 1:1</button>
+    <button class="tab" data-p="p3">多对多 M:N</button>
+  </div>
+
+  <div class="pane on" id="p1">
+    <div class="fig"><svg viewBox="0 0 860 220">
+      <rect class="sv-p" x="180" y="20" width="500" height="70" rx="12"/>
+      <text class="sv-t" x="200" y="44">用户态：线程库自己调度</text>
+      <circle class="sv-v" cx="260" cy="70" r="14"/><text class="sv-ts" x="252" y="74">U1</text>
+      <circle class="sv-v" cx="330" cy="70" r="14"/><text class="sv-ts" x="322" y="74">U2</text>
+      <circle class="sv-v" cx="400" cy="70" r="14"/><text class="sv-ts" x="392" y="74">U3</text>
+      <circle class="sv-v" cx="470" cy="70" r="14"/><text class="sv-ts" x="462" y="74">U4</text>
+      <path class="sv-l flow" d="M260 86 L400 128 M330 86 L400 128 M400 86 L400 128 M470 86 L400 128"/>
+      <rect class="sv-a" x="340" y="130" width="120" height="40" rx="10"/>
+      <text class="sv-ts" x="368" y="155">唯一 KSE</text>
+      <rect class="sv-y" x="180" y="182" width="500" height="30" rx="8"/>
+      <text class="sv-ts" x="200" y="202">内核只看见一个调度实体 → 只能占用一个 CPU 核</text>
+    </svg><div class="fig-c">切换极快，但一个阻塞全体停摆，且无法多核并行</div></div>
+    <ul>
+      <li>调度完全在用户态，<b>不需要模式切换</b>，切换代价极小。</li>
+      <li><b>致命伤一：</b>某线程执行阻塞系统调用 → 内核把这唯一的 KSE 挂起 → <b>整个进程停摆</b>。</li>
+      <li><b>致命伤二：</b>缺页异常同理，也会陷入内核阻塞唯一 KSE。</li>
+      <li><b>致命伤三：</b>只有一个内核实体，无法多核并行。</li>
+      <li>历史缓解：<b>jacketing（包裹技术）</b>——把阻塞调用包装成"先非阻塞试探，会阻塞就切换到别的用户线程"；以及非阻塞 I/O + <code>select</code>/<code>poll</code> 事件循环。</li>
+    </ul>
+  </div>
+
+  <div class="pane" id="p2">
+    <div class="fig"><svg viewBox="0 0 860 220">
+      <rect class="sv-p" x="180" y="20" width="500" height="70" rx="12"/>
+      <text class="sv-t" x="200" y="44">用户线程</text>
+      <circle class="sv-v" cx="260" cy="70" r="14"/><text class="sv-ts" x="252" y="74">U1</text>
+      <circle class="sv-v" cx="360" cy="70" r="14"/><text class="sv-ts" x="352" y="74">U2</text>
+      <circle class="sv-v" cx="460" cy="70" r="14"/><text class="sv-ts" x="452" y="74">U3</text>
+      <circle class="sv-v" cx="560" cy="70" r="14"/><text class="sv-ts" x="552" y="74">U4</text>
+      <path class="sv-l flow" d="M260 86 L260 128 M360 86 L360 128 M460 86 L460 128 M560 86 L560 128"/>
+      <rect class="sv-a" x="228" y="130" width="64" height="36" rx="9"/><text class="sv-ts" x="248" y="153">KSE</text>
+      <rect class="sv-a" x="328" y="130" width="64" height="36" rx="9"/><text class="sv-ts" x="348" y="153">KSE</text>
+      <rect class="sv-a" x="428" y="130" width="64" height="36" rx="9"/><text class="sv-ts" x="448" y="153">KSE</text>
+      <rect class="sv-a" x="528" y="130" width="64" height="36" rx="9"/><text class="sv-ts" x="548" y="153">KSE</text>
+      <rect class="sv-y" x="180" y="180" width="500" height="30" rx="8"/>
+      <text class="sv-ts" x="200" y="200">内核看见 4 个调度实体 → 可同时占用 4 个 CPU 核</text>
+    </svg><div class="fig-c">现代主流：Linux NPTL、Windows、Solaris 9+、FreeBSD 7+</div></div>
+    <ul>
+      <li>真正并行；单线程阻塞<b>不影响</b>其他线程。</li>
+      <li>代价：创建、切换、同步都要陷入内核，每线程还要 16 KB 内核栈 + task_struct。</li>
+      <li>内核能感知单个线程并<b>为其单独分配时间片</b>——这是第 30 题 B 项的依据。</li>
+    </ul>
+  </div>
+
+  <div class="pane" id="p3">
+    <div class="fig"><svg viewBox="0 0 860 220">
+      <rect class="sv-p" x="180" y="20" width="500" height="70" rx="12"/>
+      <text class="sv-t" x="200" y="44">M 个用户线程</text>
+      <circle class="sv-v" cx="240" cy="70" r="13"/><text class="sv-ts" x="233" y="74">U1</text>
+      <circle class="sv-v" cx="300" cy="70" r="13"/><text class="sv-ts" x="293" y="74">U2</text>
+      <circle class="sv-v" cx="360" cy="70" r="13"/><text class="sv-ts" x="353" y="74">U3</text>
+      <circle class="sv-v" cx="420" cy="70" r="13"/><text class="sv-ts" x="413" y="74">U4</text>
+      <circle class="sv-v" cx="480" cy="70" r="13"/><text class="sv-ts" x="473" y="74">U5</text>
+      <circle class="sv-v" cx="540" cy="70" r="13"/><text class="sv-ts" x="533" y="74">U6</text>
+      <path class="sv-l flow" d="M240 85 L290 128 M300 85 L290 128 M360 85 L410 128 M420 85 L410 128 M480 85 L530 128 M540 85 L530 128"/>
+      <rect class="sv-a" x="258" y="130" width="64" height="36" rx="9"/><text class="sv-ts" x="276" y="153">KSE</text>
+      <rect class="sv-a" x="378" y="130" width="64" height="36" rx="9"/><text class="sv-ts" x="396" y="153">KSE</text>
+      <rect class="sv-a" x="498" y="130" width="64" height="36" rx="9"/><text class="sv-ts" x="516" y="153">KSE</text>
+      <rect class="sv-y" x="180" y="180" width="500" height="30" rx="8"/>
+      <text class="sv-ts" x="200" y="200">N 个内核实体可被内核同时调度到 N 个 CPU 上 → 确实能并行</text>
+    </svg><div class="fig-c">N ≤ M；能并行的用户线程数上限 = min(N, 物理核数)</div></div>
+    <div class="warn"><b>高频陷阱</b>　"多对多模型中多个线程不能同时在多个处理机上运行" —— <b>这是错的</b>。M:N 的全部意义就在于那 N 个内核实体可以被内核同时调度到多个 CPU。<b>只有 M:1</b> 才真的无法多核并行。第 29 题 C 项正是把这句话安在 M:1 头上，所以 C 是对的。</div>
+  </div>
+
+  <h3 class="rv">2 · 量化：切换到底差多少</h3>
+  <div class="fig rv">
+    <div class="fig-t">两个数量级的鸿沟</div>
+    <svg viewBox="0 0 860 200">
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e39ab0"/><stop offset="1" stop-color="#a294d6"/></linearGradient>
+        <linearGradient id="g2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7cc3cf"/><stop offset="1" stop-color="#a3dbe0"/></linearGradient>
+      </defs>
+      <text class="sv-tb" x="20" y="40">内核级线程上下文切换</text>
+      <rect x="20" y="52" width="0" height="26" rx="8" fill="url(#g1)" class="bar" data-w="740"/>
+      <text class="sv-t" x="30" y="70" fill="#fff" font-weight="700">约 3.4 微秒（直接成本）</text>
+      <text class="sv-ts" x="20" y="96">Li / Ding / Shen, ExpCS 2007 实测（Linux 2.6.17）</text>
+      <text class="sv-tb" x="20" y="136">用户态协程 / 纤程切换</text>
+      <rect x="20" y="148" width="0" height="26" rx="8" fill="url(#g2)" class="bar" data-w="42"/>
+      <text class="sv-t" x="74" y="167">约 12 纳秒</text>
+      <text class="sv-ts" x="20" y="192">CS 301 (UAF) 在 x86-64 Sandy Bridge 上实测，OS 切换约慢 100 倍</text>
+    </svg>
+    <div class="fig-c">同一张图上按比例画，用户态切换那条几乎看不见</div>
+  </div>
+  <p class="rv">为什么用户态切换能快 100 倍？因为它<b>本质上就是一次普通函数调用</b>。遵循 ABI 调用约定，caller-saved 寄存器已由编译器在调用点处理好，切换代码只需保存 / 恢复 <b>callee-saved 寄存器 + 栈指针 + 返回地址</b>。x86-64 上就是 <code>rbx, rbp, r12–r15</code> 加一个 <code>rsp</code>。</p>
+
+  <h3 class="rv">3 · M:N 的溃败：为什么两层调度器活不下去</h3>
+  <div class="duo rv">
+    <div class="card"><div class="card-t"><span class="tag tag-f">Linux</span>NGPT 输给 NPTL</div>
+      <p style="margin-top:4px">IBM/Intel 的 NGPT 走 M:N，Red Hat 的 NPTL（Drepper &amp; Molnar）走 1:1。NPTL 胜出。</p>
+      <p>设计文档给的理由干脆利落：<b>拖慢线程性能的内核问题可以被消除</b>（这正是 Molnar 的工作：O(1) 调度器、futex），而 <b>"M:N 实现需要两个调度器"</b>。</p>
+      <p style="color:var(--sumi-3);font-size:13.5px">Dr. Dobb's 的评价：当 Molnar 把 O(1) 调度器合进内核，"争论基本就结束了"。</p></div>
+    <div class="card"><div class="card-t"><span class="tag tag-f">FreeBSD</span>KSE 被放弃</div>
+      <p style="margin-top:4px">FreeBSD 5 引入 M:N 的 <b>KSE（Kernel Scheduled Entities）</b>，思想类似 Scheduler Activations，5.3 起成为默认。</p>
+      <p>但这条路并没有取得预期的成功，<b>FreeBSD 7.0（2008）改回 1:1 的 libthr</b>。当年的 man page 直言：libthr 针对系统级线程语义优化，相比 N:M 的 libkse 能带来显著性能提升。</p>
+      <p style="color:var(--sumi-3);font-size:13.5px">NetBSD 也实现过 Scheduler Activations，同样最终放弃转向 1:1。</p></div>
+  </div>
+
+  <div class="fig rv">
+    <div class="fig-t">M:N 的四道死结</div>
+    <svg viewBox="0 0 860 240">
+      <rect class="sv-p" x="20" y="20" width="196" height="200" rx="14"/>
+      <text class="sv-tb" x="38" y="48">1 信号语义</text>
+      <text class="sv-t" x="38" y="76">信号该投给哪个用户</text>
+      <text class="sv-t" x="38" y="98">线程？如何在用户态</text>
+      <text class="sv-t" x="38" y="120">正确分发？</text>
+      <text class="sv-ts" x="38" y="150">Solaris 需要专门的</text>
+      <text class="sv-ts" x="38" y="170">信号处理线程，带来</text>
+      <text class="sv-ts" x="38" y="190">序列化与额外开销</text>
+      <rect class="sv-v" x="234" y="20" width="196" height="200" rx="14"/>
+      <text class="sv-tb" x="252" y="48">2 两层调度器打架</text>
+      <text class="sv-t" x="252" y="76">内核调度器与用户态</text>
+      <text class="sv-t" x="252" y="98">调度器互不知情</text>
+      <text class="sv-ts" x="252" y="130">优先级反转</text>
+      <text class="sv-ts" x="252" y="152">调度决策失配</text>
+      <text class="sv-ts" x="252" y="174">无法可靠设优先级</text>
+      <rect class="sv-a" x="448" y="20" width="196" height="200" rx="14"/>
+      <text class="sv-tb" x="466" y="48">3 阻塞调用难处理</text>
+      <text class="sv-t" x="466" y="76">必须有 upcall 机制</text>
+      <text class="sv-t" x="466" y="98">内核才能告诉用户态</text>
+      <text class="sv-t" x="466" y="120">"你有个线程阻塞了"</text>
+      <text class="sv-ts" x="466" y="152">实现难度极高，内核</text>
+      <text class="sv-ts" x="466" y="174">与用户态都要大改</text>
+      <rect class="sv-y" x="662" y="20" width="176" height="200" rx="14"/>
+      <text class="sv-tb" x="680" y="48">4 调试地狱</text>
+      <text class="sv-t" x="680" y="76">用户线程与内核实体</text>
+      <text class="sv-t" x="680" y="98">的映射是流动的</text>
+      <text class="sv-ts" x="680" y="130">调试器难以对应</text>
+      <text class="sv-ts" x="680" y="152">"这个栈属于谁"</text>
+      <text class="sv-ts" x="680" y="182">成了哲学问题</text>
+    </svg>
+  </div>
+
+  <h3 class="rv">4 · Scheduler Activations：最优雅的失败</h3>
+  <div class="quote rv">Anderson, Bershad, Lazowska, Levy —<br><b>《Scheduler Activations: Effective Kernel Support for the User-Level Management of Parallelism》</b><br>SOSP '91 / ACM TOCS 10(1), Feb 1992, pp. 53–79　DOI 10.1145/121132.121151</div>
+  <p class="rv">核心思想：让内核与用户态线程库<b>协作</b>——内核向用户态发起 <b>upcall（上调）</b>，机制类似 UNIX 信号，在一个已知入口地址激活用户态运行时。这个载体就叫 <b>scheduler activation（SA）</b>。</p>
+
+  <div class="fig rv">
+    <div class="fig-t">upcall 的工作方式</div>
+    <svg viewBox="0 0 860 260">
+      <defs><marker id="ar9" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a49dae"/></marker></defs>
+      <line x1="30" y1="120" x2="830" y2="120" stroke="#e7dee4"/>
+      <text class="sv-ts" x="30" y="26">用户态运行时（线程库调度器）</text>
+      <text class="sv-ts" x="30" y="250">内核</text>
+      <circle class="sv-v" cx="120" cy="70" r="18"/><text class="sv-ts" x="112" y="74">T1</text>
+      <circle class="sv-v" cx="220" cy="70" r="18"/><text class="sv-ts" x="212" y="74">T2</text>
+      <circle class="sv-v" cx="320" cy="70" r="18"/><text class="sv-ts" x="312" y="74">T3</text>
+      <path class="sv-l flow" d="M120 90 L120 160" marker-end="url(#ar9)"/>
+      <rect class="sv-a" x="60" y="162" width="130" height="40" rx="10"/>
+      <text class="sv-ts" x="74" y="186">T1 在 read() 中阻塞</text>
+      <path d="M200 182 Q 400 240 560 182" class="sv-l flow" marker-end="url(#ar9)"/>
+      <rect class="sv-y" x="480" y="150" width="200" height="52" rx="12"/>
+      <text class="sv-tb" x="496" y="172">内核发起 upcall</text>
+      <text class="sv-ts" x="496" y="192">"T1 阻塞了，再给你一个虚拟处理器"</text>
+      <path class="sv-l flow" d="M580 148 L580 96" marker-end="url(#ar9)"/>
+      <rect class="sv-p" x="480" y="48" width="200" height="46" rx="12"/>
+      <text class="sv-tb" x="496" y="70">用户态调度器被激活</text>
+      <text class="sv-ts" x="496" y="88">在新 SA 上调度 T2 继续跑</text>
+      <rect class="sv-box" x="700" y="48" width="140" height="154" rx="12"/>
+      <text class="sv-tb" x="716" y="72">关键点</text>
+      <text class="sv-t" x="716" y="98">内核不需要知道</text>
+      <text class="sv-t" x="716" y="120">用户态用什么结构</text>
+      <text class="sv-t" x="716" y="142">表示并行性</text>
+      <text class="sv-ts" x="716" y="170">SA 总数由应用控制</text>
+      <text class="sv-ts" x="716" y="192">阻塞线程标记 blocked</text>
+    </svg>
+    <div class="fig-c">既保留用户级线程的低开销，又能正确处理阻塞——理论上完美</div>
+  </div>
+
+  <h4 class="rv">为什么它还是没被工业界采纳</h4>
+  <ul class="rv">
+    <li>实现复杂：内核与用户态<b>双向大改</b>。</li>
+    <li>upcall 本身有开销：论文实测 upcall 延迟约为内核线程的 <b>5 倍</b>。</li>
+    <li>临界区恢复机制拖累常见路径：为了处理"线程在临界区被抢占"，论文用了复制临界区代码的办法，但即使临界区<b>没有</b>被抢占，每次自旋锁操作也要检查线程描述符。</li>
+    <li>最致命的：随着内核 1:1 线程被优化到足够快（futex、O(1) 调度器），<b>性价比不再成立</b>。</li>
+  </ul>
+
+  <h3 class="rv">5 · 复活：现代运行时怎么绕开死结</h3>
+  <p class="rv">历史 M:N 死于"两层调度器打架 + 阻塞 syscall 难处理"。现代语言运行时的破解方式是——<span class="mk-a">不再和内核抢调度，而是把所有阻塞点都改造成让出点</span>。</p>
+
+  <h4 class="rv">Go 的 G-M-P</h4>
+  <div class="fig rv">
+    <div class="fig-t">goroutine / machine / processor</div>
+    <svg viewBox="0 0 860 300">
+      <defs><marker id="ar10" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c26b8a"/></marker></defs>
+      <rect class="sv-p" x="30" y="20" width="380" height="130" rx="14"/>
+      <text class="sv-tb" x="48" y="46">P（逻辑处理器，数量 = GOMAXPROCS）</text>
+      <rect class="sv-box" x="48" y="58" width="164" height="76" rx="10"/>
+      <text class="sv-ts" x="60" y="78">P0 本地运行队列</text>
+      <circle class="sv-v" cx="72" cy="102" r="10"/><circle class="sv-v" cx="98" cy="102" r="10"/>
+      <circle class="sv-v" cx="124" cy="102" r="10"/><circle class="sv-v" cx="150" cy="102" r="10"/>
+      <text class="sv-ts" x="60" y="126">runnext 单槽优先</text>
+      <rect class="sv-box" x="228" y="58" width="164" height="76" rx="10"/>
+      <text class="sv-ts" x="240" y="78">P1 本地运行队列</text>
+      <circle class="sv-v" cx="252" cy="102" r="10"/><circle class="sv-v" cx="278" cy="102" r="10"/>
+      <text class="sv-ts" x="240" y="126">空了 → 去偷一半</text>
+      <path class="sv-l flow" d="M212 102 L226 102" marker-end="url(#ar10)"/>
+      <text class="sv-ts" x="150" y="150" fill="#c26b8a">work stealing</text>
+      <rect class="sv-a" x="30" y="166" width="380" height="80" rx="14"/>
+      <text class="sv-tb" x="48" y="192">M（OS 线程，上限 sched.maxmcount = 10000）</text>
+      <rect class="sv-box" x="48" y="202" width="100" height="34" rx="9"/><text class="sv-ts" x="76" y="224">M0</text>
+      <rect class="sv-box" x="160" y="202" width="100" height="34" rx="9"/><text class="sv-ts" x="188" y="224">M1</text>
+      <rect class="sv-box" x="272" y="202" width="120" height="34" rx="9"/><text class="sv-ts" x="288" y="224">M2（阻塞中）</text>
+      <rect class="sv-y" x="440" y="20" width="390" height="106" rx="14"/>
+      <text class="sv-tb" x="458" y="46">netpoller —— 把阻塞 I/O 变成非阻塞</text>
+      <text class="sv-t" x="458" y="72">集成 epoll(Linux) / kqueue(BSD)</text>
+      <text class="sv-t" x="458" y="94">做网络 I/O 的 G 被 park，fd 注册到 netpoller</text>
+      <text class="sv-t" x="458" y="116">M 不阻塞，转去跑别的 G；就绪后再唤醒</text>
+      <rect class="sv-box" x="440" y="140" width="390" height="66" rx="14"/>
+      <text class="sv-tb" x="458" y="166">真的阻塞在 syscall 里怎么办</text>
+      <text class="sv-t" x="458" y="190">把 P 从阻塞的 M 上剥离，交给另一个 M（必要时新建）</text>
+      <rect class="sv-v" x="440" y="220" width="390" height="66" rx="14"/>
+      <text class="sv-tb" x="458" y="246">sysmon —— 不带 P 的守护线程</text>
+      <text class="sv-t" x="458" y="270">负责抢占、netpoll、触发 GC</text>
+      <rect class="sv-p" x="30" y="258" width="380" height="30" rx="10"/>
+      <text class="sv-ts" x="48" y="278">G：起始栈仅 2 KB，连续栈 + morestack 增长</text>
+    </svg>
+    <div class="fig-c">M 必须先拿到 P 才能执行 Go 代码；G 是工作单元</div>
+  </div>
+
+  <h4 class="rv">Go 抢占的演进：从"永远卡住"到 SIGURG</h4>
+  <div class="tw rv"><table>
+    <thead><tr><th>阶段</th><th>机制</th><th>缺陷 / 突破</th></tr></thead>
+    <tbody>
+      <tr><td>Go 1.14 之前</td><td><b>协作式抢占</b>：只在函数序言的栈增长检查点（<code>morestack_noctxt</code> → <code>newstack</code>）检查抢占标志 <code>stackguard0 == stackPreempt</code></td><td class="no">紧密循环（无函数调用）永不让出，<code>for{}</code> 会永久霸占一个 P</td></tr>
+      <tr><td>Go 1.14 起</td><td><b>基于信号的异步抢占</b>：sysmon 发现某 G 跑超 10 ms（源码 <code>forcePreemptNS = 10 * 1000 * 1000</code>）→ <code>preemptone()</code> → 用 <code>tgkill</code> 给该 M 发 <b>SIGURG</b></td><td class="yes">信号处理器 → <code>doSigPreempt()</code> → 查 PCDATA 表判断是否异步安全点 → 注入 <code>runtime.asyncPreempt</code> → <code>mcall</code> 切到 g0 栈 → <code>gopreempt_m()</code> → <code>schedule()</code></td></tr>
+    </tbody></table></div>
+  <div class="note rv"><b>为什么选 SIGURG</b>　不干扰调试器、不被 libc 使用、可以被无害地虚假触发、且能覆盖没有实时信号的平台。一个信号的选择也能讲出这么多讲究——这是运行时设计的典型质感。</div>
+
+  <h4 class="rv">Java 虚拟线程（Project Loom, JEP 444）</h4>
+  <ul class="rv">
+    <li>JDK 19/20 预览（JEP 425 / 436），<b>JDK 21（2023 LTS）正式（JEP 444）</b>。</li>
+    <li><b>continuation + carrier thread：</b>虚拟线程的调用栈存在 <b>Java 堆</b>上（作为 continuation 对象），起始仅几 KB 并按需增长；执行时<b>挂载（mount）</b>到一个 carrier thread（来自 ForkJoinPool，默认大小 = 可用处理器数）。</li>
+    <li><b>阻塞即卸载（unmount）：</b>阻塞 I/O 时 JVM 捕获 continuation（栈状态 + 局部变量）、把它从 carrier 卸载、栈存回堆，carrier 立刻去跑别的虚拟线程；I/O 完成后重新挂载到<b>任一</b>可用 carrier 恢复。</li>
+    <li>JDK 的 java.net / java.nio / JDBC 等阻塞 I/O <b>已被改写</b>为 park 虚拟线程而非阻塞 carrier——这是关键前提。</li>
+    <li><b>pinning（钉住）：</b>JDK 21–23 中持有 <code>synchronized</code> 监视器锁时无法卸载，<code>Object.wait()</code>、JNI/FFI 也会钉住。<b>JDK 24 的 JEP 491 修复了 synchronized 导致的钉住</b>。诊断参数：<code>-Djdk.tracePinnedThreads=full</code>。</li>
+  </ul>
+  <div class="warn rv"><b>别记反</b>　虚拟线程对 <b>I/O 密集型</b>（大量并发阻塞）吞吐提升巨大；对 <b>CPU 密集型</b>任务<b>不适合</b>——那受限于物理核心数。对照：平台线程默认约 1 MB 栈（<code>-Xss</code>），虚拟线程栈小得多。</div>
+
+  <div class="duo rv">
+    <div class="card"><div class="card-t"><span class="tag tag-f">Erlang</span>BEAM</div>
+      <p style="margin-top:4px">默认每核一个调度器线程，用 <b>reduction 计数</b>实现抢占（执行一定数量归约后强制让出）。进程极轻量、消息传递无共享——M:N 的另一条成功路径。</p></div>
+    <div class="card"><div class="card-t"><span class="tag tag-f">Rust</span>async / tokio</div>
+      <p style="margin-top:4px"><code>async</code> 编译成状态机（<b>无栈</b>协程），tokio 是多线程 work-stealing 运行时，靠 mio 封装 epoll/kqueue。与 Go/Loom 的区别：无栈——编译期生成状态机，而非运行时保存栈。</p></div>
+  </div>
+
+  <h4 class="rv">Windows：Fiber 与 UMS</h4>
+  <div class="tw rv"><table>
+    <thead><tr><th></th><th>Fiber（纤程）</th><th>UMS（用户态调度）</th></tr></thead>
+    <tbody>
+      <tr><td>调度方式</td><td><b>协作式、非抢占</b>，必须手动 <code>SwitchToFiber</code> 让出</td><td>用户态调度器可在用户态切换，无需系统调度器介入</td></tr>
+      <tr><td>线程上下文</td><td>共享所在线程的上下文</td><td class="yes"><b>每个 UMS 线程有自己的线程上下文</b></td></tr>
+      <tr><td>内核阻塞时</td><td>整个宿主线程阻塞</td><td class="yes"><b>能把控制权交回用户态调度器</b>——这正是 M:N 的精髓</td></tr>
+      <tr><td>API</td><td><code>ConvertThreadToFiber</code> → <code>CreateFiber</code> → <code>SwitchToFiber</code></td><td>UMS 系列 API</td></tr>
+      <tr><td>可用范围</td><td>广泛</td><td class="no">仅 64 位（AMD64/Itanium），Arm64 与 32 位不支持</td></tr>
+      <tr><td>现状</td><td>仍可用</td><td class="no"><b>Windows 11 起移除</b>，调用返回 <code>ERROR_NOT_SUPPORTED</code></td></tr>
+    </tbody></table></div>
+  <div class="note rv"><b>时间线澄清</b>　网上常说"UMS 很早就废弃了"，不准确。更早（Visual Studio 2013）被弃用的是<b>并发运行时 ConcRT 对 UMS 的内部使用</b>；而<b>操作系统层的 UMS API 一直保留到 Windows 10 21H2 / Server 2022</b>，Windows 11 才真正移除。两件事要分开。</div>
+</section>
+
+<!-- ===== 五 ===== -->
+<section class="chap" id="c5">
+  <div class="chap-head rv"><div class="chap-num">五</div>
+    <div><div class="chap-jp">きりかえ</div><h2>切换的本质</h2></div></div>
+  <div class="chap-rule rv"></div>
+  <p class="chap-intro rv">"线程切换比进程切换开销小"——这句话每个人都会背，但<b>小在哪里</b>才是考点。答案只有一句：<span class="mk-a">同进程线程切换不换页表，所以不刷 TLB</span>。其余的寄存器保存恢复，两者是一样的。</p>
+
+  <h3 class="rv">1 · 三个概念必须分清</h3>
+  <div class="fig rv">
+    <div class="fig-t">模式切换 · 上下文切换 · 进程切换</div>
+    <svg viewBox="0 0 860 260">
+      <rect class="sv-a" x="20" y="30" width="260" height="200" rx="14"/>
+      <text class="sv-tb" x="38" y="58">模式切换 mode switch</text>
+      <text class="sv-t" x="38" y="86">用户态 ↔ 内核态的特权级变化</text>
+      <text class="sv-t" x="38" y="110">触发：syscall / 中断 / 异常</text>
+      <text class="sv-t" x="38" y="140" font-weight="700">不换 task</text>
+      <text class="sv-ts" x="38" y="168">开销相对小</text>
+      <rect class="sv-y" x="38" y="182" width="224" height="36" rx="9"/>
+      <text class="sv-ts" x="52" y="204">系统调用陷入内核 ≠ 上下文切换</text>
+      <rect class="sv-v" x="300" y="30" width="260" height="200" rx="14"/>
+      <text class="sv-tb" x="318" y="58">上下文切换 context switch</text>
+      <text class="sv-t" x="318" y="86">内核决定换一个 task 来跑</text>
+      <text class="sv-t" x="318" y="110">保存旧 task 上下文</text>
+      <text class="sv-t" x="318" y="134">恢复新 task 上下文</text>
+      <text class="sv-ts" x="318" y="164">同进程内 → 不换 CR3</text>
+      <rect class="sv-a" x="318" y="178" width="224" height="40" rx="9"/>
+      <text class="sv-ts" x="332" y="196">next-&gt;mm == prev-&gt;mm</text>
+      <text class="sv-ts" x="332" y="212">→ 跳过 switch_mm → 不刷 TLB</text>
+      <rect class="sv-p" x="580" y="30" width="260" height="200" rx="14"/>
+      <text class="sv-tb" x="598" y="58">进程切换 process switch</text>
+      <text class="sv-t" x="598" y="86">上下文切换的一种，但</text>
+      <text class="sv-t" x="598" y="110">新旧 task 属于不同进程</text>
+      <text class="sv-t" x="598" y="140" font-weight="700">必须换 CR3（页表基址）</text>
+      <text class="sv-ts" x="598" y="168">TLB 中旧翻译失效</text>
+      <rect class="sv-y" x="598" y="182" width="224" height="36" rx="9"/>
+      <text class="sv-ts" x="612" y="204">靠 PCID / ASID 缓解全量刷新</text>
+    </svg>
+    <div class="fig-c">考题最爱在"syscall 算不算上下文切换"上设陷阱</div>
+  </div>
+
+  <h3 class="rv">2 · 同进程内核级线程切换：内核代码路径</h3>
+  <div class="fig rv">
+    <svg viewBox="0 0 860 210">
+      <defs><marker id="ar11" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a49dae"/></marker></defs>
+      <rect class="sv-box" x="20" y="80" width="120" height="46" rx="11"/><text class="sv-ts" x="42" y="108">schedule()</text>
+      <path class="sv-l flow" d="M142 103 L166 103" marker-end="url(#ar11)"/>
+      <rect class="sv-v" x="168" y="80" width="150" height="46" rx="11"/><text class="sv-ts" x="186" y="108">context_switch()</text>
+      <path class="sv-l flow" d="M320 92 L346 60" marker-end="url(#ar11)"/>
+      <path class="sv-l flow" d="M320 114 L346 146" marker-end="url(#ar11)"/>
+      <rect class="sv-p" x="348" y="30" width="220" height="56" rx="11"/>
+      <text class="sv-ts" x="364" y="54">if (next-&gt;mm != prev-&gt;mm)</text>
+      <text class="sv-ts" x="364" y="74">  switch_mm_irqs_off() → 换 CR3</text>
+      <text class="sv-t" x="580" y="62" fill="#c26b8a">跨进程才走这条</text>
+      <rect class="sv-a" x="348" y="120" width="220" height="56" rx="11"/>
+      <text class="sv-ts" x="364" y="144">switch_to(prev, next, last)</text>
+      <text class="sv-ts" x="364" y="164">→ __switch_to_asm → __switch_to</text>
+      <text class="sv-t" x="580" y="152" fill="#3f7f8a">同进程线程只走这条</text>
+    </svg>
+    <div class="fig-c">线程切换比进程切换便宜，差的就是上面那条粉色分支</div>
+  </div>
+
+  <div class="pre-t rv">ARCH/X86/ENTRY/ENTRY_64.S</div>
+  <pre class="rv"><code><span class="c-f">ENTRY</span>(__switch_to_asm)
+    <span class="c-c">/* 保存 prev 的 callee-saved 寄存器 */</span>
+    <span class="c-k">pushq</span> %rbp
+    <span class="c-k">pushq</span> %rbx
+    <span class="c-k">pushq</span> %r12
+    <span class="c-k">pushq</span> %r13
+    <span class="c-k">pushq</span> %r14
+    <span class="c-k">pushq</span> %r15
+
+    <span class="c-c">/* 换栈：这两行就是"切换"的全部本质 */</span>
+    <span class="c-k">movq</span> %rsp, TASK_threadsp(%rdi)   <span class="c-c"># rdi = prev，存旧 rsp</span>
+    <span class="c-k">movq</span> TASK_threadsp(%rsi), %rsp   <span class="c-c"># rsi = next，载入新 rsp</span>
+
+    <span class="c-c">/* 栈保护 canary、RETPOLINE RSB 填充等 */</span>
+
+    <span class="c-c">/* 恢复 next 的 callee-saved 寄存器 */</span>
+    <span class="c-k">popq</span> %r15
+    <span class="c-k">popq</span> %r14
+    <span class="c-k">popq</span> %r13
+    <span class="c-k">popq</span> %r12
+    <span class="c-k">popq</span> %rbx
+    <span class="c-k">popq</span> %rbp
+    <span class="c-k">jmp</span> __switch_to       <span class="c-c"># C 函数，处理 FPU / 调试寄存器等</span>
+<span class="c-f">END</span>(__switch_to_asm)</code></pre>
+
+  <div class="note rv">
+    <b>为什么只存 6 个寄存器</b>　内核也遵循 C 调用约定，caller-saved 寄存器已在调用点由编译器处理。<br>
+    <b>为什么不存 EFLAGS</b>　2014 / 2019 年 LKML 上反复讨论过，结论是内核态 flags 总是干净的（NT 标志已清），最终去掉了 <code>pushfq/popfq</code>。<br>
+    <b>switch_to 为什么有三个参数</b>　切换完成后"当前 task"已经是 next 了，需要 <code>last</code> 参数把真正的 prev 传回来——一个著名的小魔术。
+  </div>
+
+  <h3 class="rv">3 · 跨进程切换：CR3、PCID 与 KPTI</h3>
+  <ul class="rv">
+    <li><b>PCID（x86-64）/ ASID（ARM）：</b>给 TLB 条目打上上下文标签，换 CR3 时不必全量刷 TLB。</li>
+    <li>Linux 4.7 就引入了 PCID，但当时几乎没用武之地。<b>Meltdown 改变了一切。</b></li>
+    <li><b>KPTI（CVE-2017-5754 缓解）：</b>用户态与内核态改用<b>两套页表</b>，每次进出内核都要写 CR3。若无 PCID，每次都全刷 TLB，开销灾难性。</li>
+    <li><b>PCID 拯救了 KPTI：</b>内核页表与用户页表各用不同 PCID 标签，两者可同时留在 TLB 里。代价是 KPTI 下每个 mm 需要<b>两个</b> PCID，有效 ASID 空间减半到 2048。</li>
+  </ul>
+
+  <div class="fig rv">
+    <div class="fig-t">KPTI 开销的量化（Brendan Gregg 实测 / USENIX ;login: 2018）</div>
+    <svg viewBox="0 0 860 230">
+      <line x1="70" y1="190" x2="820" y2="190" class="sv-l"/>
+      <line x1="70" y1="20" x2="70" y2="190" class="sv-l"/>
+      <text class="sv-ts" x="10" y="26">开销</text>
+      <text class="sv-ts" x="700" y="212">syscall 速率 →</text>
+      <rect class="bar2" x="120" y="190" width="60" height="0" rx="6" fill="#a3dbe0" data-h="22"/>
+      <text class="sv-ts" x="128" y="208">50k/s</text><text class="sv-t" x="130" y="162">2%</text>
+      <rect class="bar2" x="240" y="190" width="60" height="0" rx="6" fill="#8ecfd6" data-h="46"/>
+      <text class="sv-ts" x="238" y="208">跑 Apache</text><text class="sv-t" x="248" y="138">4.5%</text>
+      <rect class="bar2" x="360" y="190" width="60" height="0" rx="6" fill="#e3b0c4" data-h="70"/>
+      <text class="sv-ts" x="348" y="208">工作集&gt;10MB</text><text class="sv-t" x="372" y="114">7%</text>
+      <rect class="bar2" x="480" y="190" width="60" height="0" rx="6" fill="#d98fa8" data-h="150"/>
+      <text class="sv-ts" x="466" y="208">10M/s 无PCID</text>
+      <text class="sv-t" x="470" y="34" font-weight="700">&gt;800%</text>
+      <text class="sv-ts" x="556" y="52">一半 CPU 周期都在 page walk</text>
+      <text class="sv-ts" x="556" y="72">IPC 从 0.86 掉到 0.10</text>
+    </svg>
+    <div class="fig-c">工作集大小对切换代价的放大效应，比"多存几个寄存器"重要得多</div>
+  </div>
+
+  <h3 class="rv">4 · 用户级线程切换：换栈，仅此而已</h3>
+  <div class="pre-t rv">典型 X86-64 协程切换 SWAP(OLD, NEW)</div>
+  <pre class="rv"><code><span class="c-f">swap64</span>:
+    <span class="c-c">; 保存 callee-saved 寄存器到当前(old)栈</span>
+    <span class="c-k">push</span> rdi
+    <span class="c-k">push</span> rbp
+    <span class="c-k">push</span> rbx
+    <span class="c-k">push</span> r12
+    <span class="c-k">push</span> r13
+    <span class="c-k">push</span> r14
+    <span class="c-k">push</span> r15
+
+    <span class="c-k">mov</span>  [rdi], rsp        <span class="c-c">; *old = rsp   ← 保存旧栈指针</span>
+    <span class="c-k">mov</span>  rsp, [rsi]        <span class="c-c">; rsp  = *new  ← 载入新栈指针</span>
+
+    <span class="c-c">; 从新(new)栈恢复</span>
+    <span class="c-k">pop</span>  r15
+    <span class="c-k">pop</span>  r14
+    <span class="c-k">pop</span>  r13
+    <span class="c-k">pop</span>  r12
+    <span class="c-k">pop</span>  rbx
+    <span class="c-k">pop</span>  rbp
+    <span class="c-k">pop</span>  rdi
+    <span class="c-k">ret</span>                    <span class="c-c">; 返回到新栈上的返回地址 = 新的 PC</span></code></pre>
+
+  <div class="warn rv">
+    <b>第 25 题 D 项的靶心</b>　"用户级线程由于不需要内核支持，因此切换时<b>完全不需要保存寄存器上下文</b>"——<b>错</b>。<br>
+    它<b>必须</b>保存 callee-saved 寄存器和栈指针，否则新旧执行流的状态就乱了。真正的区别只是：<b>不需要保存全部寄存器</b>（caller-saved 由编译器按 ABI 保证），且<b>不需要跨越用户态到内核态</b>。"少保存一些" ≠ "不保存"。
+  </div>
+  <p class="rv">补充：<code>ucontext_t</code> 结构较大（x86-64 Linux 上数百字节，因为还要存<b>信号掩码</b>，这需要一次系统调用），所以 Boost.Context 的 <code>fcontext</code>（纯汇编、不存信号掩码）比 <code>ucontext</code> 快约<b>两个数量级</b>。</p>
+
+  <h3 class="rv">5 · 隐性开销：真正贵的不是寄存器</h3>
+  <div class="tw rv"><table>
+    <thead><tr><th>成本类型</th><th>量级</th><th>来源</th></tr></thead>
+    <tbody>
+      <tr><td><b>直接成本</b> c1：寄存器保存 / 恢复 + syscall + 调度器</td><td>约 3.4 μs</td><td>Li/Ding/Shen 实测（Linux 2.6.17）</td></tr>
+      <tr><td><b>总成本</b> c2：含 cache 冷启动</td><td>几 μs ~ 数百 μs</td><td>随数据集大小增长</td></tr>
+      <tr><td>数据集恰好填满 L1+L2 时</td><td class="no">6.0 ~ 18.6 μs（均值 12.1 μs）</td><td>cache 污染最严重的区间</td></tr>
+      <tr><td>数据集远超 cache 时</td><td>不再随之增长</td><td>因为本来就会 miss</td></tr>
+      <tr><td><b>间接成本</b> = c2 − c1</td><td>可达数十 μs</td><td>L1/L2/LLC 冷启动 + TLB miss + 分支预测器状态失效</td></tr>
+    </tbody></table></div>
+
+  <h3 class="rv">6 · 时间片到底给谁：本章最大的教材陷阱</h3>
+  <div class="duo rv">
+    <div class="card card-e"><div class="card-t"><span class="tag tag-e">教材口径</span>时间片给进程</div>
+      <p style="margin-top:4px">"进程时间片用完，其包含的所有内核级线程的状态均由执行态变为就绪态。"</p>
+      <p style="color:#a05470;font-weight:600">这就是第 22 题 C 项。它是<b>错误</b>选项。</p></div>
+    <div class="card card-r"><div class="card-t"><span class="tag tag-r">真实</span>时间片给线程</div>
+      <p style="margin-top:4px">Linux 调度的实体是 <code>sched_entity</code>，对应一个 <b>task（线程）</b>。时间片 / 虚拟运行时属于单个 task。</p>
+      <p>某线程时间片用完，只有<b>那一个线程</b>从执行态变就绪态。</p></div>
+  </div>
+  <ul class="rv">
+    <li>从状态角度看也说不通：多线程进程的线程可能同时分布在<b>执行态、就绪态、阻塞态</b>，不可能"所有内核级线程都处于执行态"。</li>
+    <li><b>版本时效性：</b>Linux 长期用 CFS（2.6.23 引入），但<b>自 Linux 6.6（2023）起默认调度器已换成 EEVDF</b>。内核文档的措辞是"给<b>每个 task</b> 分配一个虚拟运行时"——再次印证调度实体是线程。</li>
+  </ul>
+  <div class="tw rv"><table>
+    <thead><tr><th>唯一接近"给进程分时间片"的机制</th><th>做什么</th><th>注意</th></tr></thead>
+    <tbody>
+      <tr><td><b>cgroup v2 cpu 控制器</b></td><td>在<b>组</b>层面按权重分配 CPU 周期。<code>cpu.weight</code> 取值 [1, 10000]，默认 100，按比例分给活跃子组</td><td>若一个 cgroup 里有多个进程，CPU 时间在其成员间再分配</td></tr>
+      <tr><td><b>autogroup</b></td><td>按会话（<code>setsid()</code>）自动分组，改善桌面交互性</td><td>父子进程放同一 task group</td></tr>
+    </tbody></table></div>
+  <p class="rv">但请注意：这些是在"进程 / 组"粒度做 <b>CPU 份额约束</b>，<b>底层被调度、被计时的仍然是单个 task</b>。</p>
+
+  <h3 class="rv">7 · 缺页时的行为差异</h3>
+  <div class="fig rv">
+    <svg viewBox="0 0 860 190">
+      <rect class="sv-a" x="20" y="20" width="390" height="150" rx="14"/>
+      <text class="sv-tb" x="38" y="48">内核级线程缺页</text>
+      <circle class="sv-v" cx="70" cy="90" r="16"/><text class="sv-ts" x="62" y="94">T1</text>
+      <circle class="sv-v" cx="140" cy="90" r="16"/><text class="sv-ts" x="132" y="94">T2</text>
+      <circle class="sv-v" cx="210" cy="90" r="16"/><text class="sv-ts" x="202" y="94">T3</text>
+      <path d="M56 104 L84 76 M56 76 L84 104" stroke="#c26b8a" stroke-width="2"/>
+      <text class="sv-t" x="38" y="132">T1 阻塞，T2 / T3 照常被调度</text>
+      <text class="sv-ts" x="38" y="154">因为它们是各自独立的调度实体</text>
+      <rect class="sv-p" x="450" y="20" width="390" height="150" rx="14"/>
+      <text class="sv-tb" x="468" y="48">用户级线程缺页</text>
+      <circle class="sv-v" cx="500" cy="90" r="16" opacity=".45"/><text class="sv-ts" x="492" y="94">U1</text>
+      <circle class="sv-v" cx="570" cy="90" r="16" opacity=".45"/><text class="sv-ts" x="562" y="94">U2</text>
+      <circle class="sv-v" cx="640" cy="90" r="16" opacity=".45"/><text class="sv-ts" x="632" y="94">U3</text>
+      <path d="M486 104 L514 76 M486 76 L514 104" stroke="#c26b8a" stroke-width="2"/>
+      <rect x="470" y="66" width="200" height="48" rx="10" fill="none" stroke="#c26b8a" stroke-dasharray="5 4"/>
+      <text class="sv-t" x="468" y="132">缺页陷入内核，阻塞了唯一的 KSE</text>
+      <text class="sv-ts" x="468" y="154">整个进程（全部用户线程）停摆</text>
+    </svg>
+    <div class="fig-c">第 22 题 B 项考的就是左图</div>
+  </div>
+</section>
+
+<!-- ===== 六 ===== -->
+<section class="chap" id="c6">
+  <div class="chap-head rv"><div class="chap-num">六</div>
+    <div><div class="chap-jp">かこもん</div><h2>1000题 22–33 逐题拆解</h2></div></div>
+  <div class="chap-rule rv"></div>
+  <p class="chap-intro rv">点击任意一题展开完整解析。<span style="color:var(--sumi-3)">青底 = 正确表述，粉底 = 错误表述。</span></p>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">22</div>
+    <div class="q-q">某系统支持用户级线程和内核级线程。关于进程和线程的状态转换，下列说法<b>错误</b>的是</div><div class="q-a">C</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">A ✓</span>若一个用户级线程执行了阻塞型系统调用，会导致该进程及其包含的所有用户级线程均被阻塞。<br><span class="sub">纯用户级线程下，内核只看见一个调度实体，它一阻塞全体停摆。</span></div>
+      <div class="opt opt-t"><span class="opt-k">B ✓</span>若一个内核级线程发生缺页异常而阻塞，同进程内的其他内核级线程依然可以被调度执行。<br><span class="sub">每个内核级线程是独立调度实体，互不牵连。</span></div>
+      <div class="opt opt-f"><span class="opt-k">C ✗</span>当进程的时间片用完时，该进程包含的所有内核级线程的状态均由执行态变为就绪态。<br><span class="sub"><b>本题答案。</b>两处硬伤：① 时间片是分配给<b>线程（调度实体）</b>而非进程的，Linux 里调度实体是 <code>sched_entity</code>（对应 task）；② 多线程进程的线程可能同时处于执行态、就绪态、阻塞态，不可能"全部由执行态变为就绪态"。</span></div>
+      <div class="opt opt-t"><span class="opt-k">D ✓</span>若进程被操作系统挂起，则其包含的所有内核级线程均无法参与 CPU 调度。<br><span class="sub">挂起 / SIGSTOP 是<b>整个线程组</b>级别的：所有线程进入 TASK_STOPPED，全部退出调度。freezer cgroup 同理。</span></div>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">23</div>
+    <div class="q-q">在支持多线程的操作系统中，有两种实现线程的方式：内核支持的线程和用户级线程。以下哪种说法是<b>错误</b>的？</div><div class="q-a">D</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">A ✓</span>用户级线程的上下文切换代价相对较小。<br><span class="sub">不需模式切换，只换 callee-saved 寄存器与栈指针。约 12 ns vs 内核 3.4 μs。</span></div>
+      <div class="opt opt-t"><span class="opt-k">B ✓</span>内核支持的线程通常需要更多的内存空间来存储线程控制块和上下文信息，而用户级线程只需要存储少量的信息。<br><span class="sub">每个内核级线程有独立内核栈（x86-64 <code>THREAD_SIZE</code> = 16 KB）+ <code>task_struct</code>（约 6–10 KB）。对照 goroutine 起始栈仅 2 KB。</span></div>
+      <div class="opt opt-t"><span class="opt-k">C ✓</span>内核支持的线程能够实现更好的多核性能和负载均衡。<br><span class="sub">内核可见每个线程，才能做跨核负载均衡与并行。</span></div>
+      <div class="opt opt-f"><span class="opt-k">D ✗</span>用户级线程的调度和同步可以更快速和灵活，<b>并且公平性更好</b>。<br><span class="sub"><b>本题答案。</b>前半句对，后半句<b>完全反了</b>：用户态线程库<b>看不到全局</b>，无法在进程间做公平调度；而且一个进程内的所有用户级线程整体<b>只占一个内核调度实体的份额</b>——线程越多，每个分到的越少。公平性反而更差。</span></div>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">24</div>
+    <div class="q-q">下面关于内核级线程的描述中，正确的有<br>I. 相较于进程，线程切换的系统开销更小　II. 需要操作系统内核支持<br>III. 线程阻塞会导致该进程的其他线程一同阻塞　IV. 在多处理器系统上，同一进程的多个线程可以并行执行</div><div class="q-a">C</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">I ✓</span>同进程线程切换<b>不换页表、不刷 TLB</b>（<code>context_switch()</code> 中 <code>next-&gt;mm == prev-&gt;mm</code> 则跳过 <code>switch_mm</code>），比进程切换便宜。</div>
+      <div class="opt opt-t"><span class="opt-k">II ✓</span>内核级线程由内核创建、维护、调度，当然需要内核支持。</div>
+      <div class="opt opt-f"><span class="opt-k">III ✗</span>这是<b>用户级线程</b>的特征。内核级线程各自是独立调度实体，一个阻塞不牵连其他。</div>
+      <div class="opt opt-t"><span class="opt-k">IV ✓</span>内核可把它们分派到不同 CPU，真正并行。</div>
+      <p style="margin-top:16px"><b>答案 C（I、II、IV）。</b>III 是本题唯一的干扰项，考的就是 ULT 与 KLT 的分界。</p>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">25</div>
+    <div class="q-q">在支持多线程的操作系统中，关于线程上下文切换的开销，下列叙述<b>错误</b>的是</div><div class="q-a">D</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">A ✓</span>同一进程内的两个用户级线程之间切换，不需要跨越用户态到内核态的模式切换。<br><span class="sub">用户级线程切换全程在用户态，就是一次"换栈 + 换寄存器"的函数调用。</span></div>
+      <div class="opt opt-t"><span class="opt-k">B ✓</span>同一进程内的两个内核级线程之间切换，其开销小于不同进程间的内核级线程切换。<br><span class="sub">差在换不换 CR3、刷不刷 TLB。</span></div>
+      <div class="opt opt-t"><span class="opt-k">C ✓</span>从内核级线程 A 切换到同一进程的内核级线程 B 时，CPU 不需要刷新快表（TLB）。<br><span class="sub">同一个 <code>mm_struct</code> → 同一份页表 → CR3 不变 → TLB 完全有效。这是"线程切换更快"的<b>唯一实质原因</b>。</span></div>
+      <div class="opt opt-f"><span class="opt-k">D ✗</span>用户级线程由于不需要内核支持，因此其在线程切换时<b>完全不需要保存寄存器上下文</b>。<br><span class="sub"><b>本题答案。</b>必须保存 callee-saved 寄存器（x86-64：<code>rbx, rbp, r12–r15</code>）和栈指针 <code>rsp</code>，否则新旧执行流状态会错乱。正确表述是"<b>不需要保存全部</b>寄存器"。</span></div>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">26</div>
+    <div class="q-q">下列关于用户级线程优缺点的描述中，正确的有<br>I. 操作系统的调度单位依旧是进程　II. 线程的调度由用户空间的线程库完成，而非操作系统内核<br>III. 支持不同应用程序采用不同的调度算法　IV. 在多处理器系统上，同一进程的多个线程可以实现并行执行</div><div class="q-a">B</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">I ✓</span>内核对用户级线程一无所知，它眼中的调度单位仍是进程（那个唯一的内核调度实体）。</div>
+      <div class="opt opt-t"><span class="opt-k">II ✓</span>这是用户级线程的定义本身。</div>
+      <div class="opt opt-t"><span class="opt-k">III ✓</span>经典优点：线程库在用户态，应用可以自定义调度策略（轮转、优先级、协作式…）。</div>
+      <div class="opt opt-f"><span class="opt-k">IV ✗</span>纯用户级线程只有<b>一个</b>内核调度实体，操作系统只能把它放到一个 CPU 上——<b>无法多核并行</b>。</div>
+      <p style="margin-top:16px"><b>答案 B（I、II、III）。</b>把 24 题和 26 题并排看：III 和 IV 在两题里正好互换了对错，这就是 ULT 与 KLT 的分水岭——<span class="mk">谁被内核看见，谁就能并行；谁不被看见，谁就一起阻塞</span>。</p>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">27</div>
+    <div class="q-q">设系统中有 4 个 CPU 核心。一个进程采用"多对多"线程模型，在用户态创建了 6 个用户级线程，映射到 3 个内核级线程上。某时刻有 2 个用户级线程因执行阻塞系统调用而进入等待状态，该进程中最多能有多少个用户级线程同时在不同 CPU 核心上并发运行？</div><div class="q-a">A</div></div>
+    <div class="q-b"><div class="q-in">
+      <p><b>答案 A：1 个。</b></p>
+      <h4 style="margin-top:18px">推理链</h4>
+      <ol>
+        <li>能并行的用户线程数，上限是<b>可用内核级线程数</b>与<b>物理核数</b>的较小者。本题 KLT 只有 3 个，核心有 4 个，瓶颈在 KLT。</li>
+        <li>用户级线程执行<b>阻塞系统调用</b>时会陷入内核，把它当时所在的那个<b>内核级线程一并阻塞</b>。</li>
+        <li>关键一步：<span class="mk">同一时刻，一个内核级线程上只能运行一个用户级线程</span>。既然这 2 个用户线程是<b>同时</b>处于系统调用中的，它们必然<b>各自占据一个不同的 KLT</b>。</li>
+        <li>所以 3 个 KLT 里有 2 个被阻塞，剩余可用 KLT = 3 − 2 = <b>1</b>。</li>
+      </ol>
+      <div class="fig" style="margin-top:20px"><svg viewBox="0 0 860 200">
+        <text class="sv-tb" x="20" y="24">6 个用户级线程</text>
+        <circle class="sv-v" cx="70" cy="60" r="16" opacity=".4"/><text class="sv-ts" x="62" y="64">U1</text>
+        <circle class="sv-v" cx="140" cy="60" r="16" opacity=".4"/><text class="sv-ts" x="132" y="64">U2</text>
+        <circle class="sv-v" cx="210" cy="60" r="16"/><text class="sv-ts" x="202" y="64">U3</text>
+        <circle class="sv-v" cx="280" cy="60" r="16" opacity=".4"/><text class="sv-ts" x="272" y="64">U4</text>
+        <circle class="sv-v" cx="350" cy="60" r="16" opacity=".4"/><text class="sv-ts" x="342" y="64">U5</text>
+        <circle class="sv-v" cx="420" cy="60" r="16" opacity=".4"/><text class="sv-ts" x="412" y="64">U6</text>
+        <path d="M56 74 L84 46 M56 46 L84 74" stroke="#c26b8a" stroke-width="2"/>
+        <path d="M126 74 L154 46 M126 46 L154 74" stroke="#c26b8a" stroke-width="2"/>
+        <text class="sv-ts" x="450" y="52">U1、U2 阻塞在系统调用中</text>
+        <text class="sv-ts" x="450" y="72">各占用一个 KLT</text>
+        <path class="sv-l flow" d="M70 78 L140 118 M140 78 L280 118 M210 78 L420 118"/>
+        <rect class="sv-p" x="90" y="120" width="100" height="40" rx="10"/><text class="sv-ts" x="108" y="145">KLT-1 阻塞</text>
+        <rect class="sv-p" x="230" y="120" width="100" height="40" rx="10"/><text class="sv-ts" x="248" y="145">KLT-2 阻塞</text>
+        <rect class="sv-a" x="370" y="120" width="100" height="40" rx="10"/><text class="sv-ts" x="392" y="145">KLT-3 可用</text>
+        <rect class="sv-y" x="520" y="110" width="310" height="60" rx="12"/>
+        <text class="sv-tb" x="538" y="136">4 个 CPU 核心，但只有 1 个 KLT 能跑</text>
+        <text class="sv-ts" x="538" y="158">最多 1 个用户级线程并发运行</text>
+      </svg></div>
+      <div class="note"><b>为什么不是 2</b>　有人会想"如果两个阻塞线程恰好在同一个 KLT 上呢"——不可能。一个 KLT 同一时刻只能执行一个 ULT，两个 ULT 若同时处在阻塞系统调用中，就必然分居两个 KLT。这个论证让答案 A 无懈可击。</div>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">28</div>
+    <div class="q-q">关于线程控制块（TCB）的管理边界，下列说法正确的是</div><div class="q-a">B</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-f"><span class="opt-k">A ✗</span>操作系统内核为每个用户级线程和内核级线程都分配独立的 TCB。<br><span class="sub">内核<b>看不见</b>用户级线程，怎么可能为它分配 TCB。用户级线程的控制块由用户态线程库维护。</span></div>
+      <div class="opt opt-t"><span class="opt-k">B ✓</span>内核级线程的 TCB 由内核创建与维护，包含寄存器值、调度状态与内核栈指针等。<br><span class="sub"><b>本题答案。</b>对应 Linux 的 <code>task_struct</code>、Windows 的 <code>KTHREAD</code>。</span></div>
+      <div class="opt opt-f"><span class="opt-k">C ✗</span>用户级线程的 TCB 保存在内核空间，以便操作系统直接参与调度决策。<br><span class="sub">正好说反了：用户级线程的 TCB 在<b>用户空间</b>，内核不参与其调度。这句话自相矛盾——若内核能直接参与调度，它就不是用户级线程了。</span></div>
+      <div class="opt opt-f"><span class="opt-k">D ✗</span>PCB 与 TCB 相互独立，PCB 中不保存任何线程级状态信息。<br><span class="sub">PCB 至少要保存线程列表 / 线程数，两者是包含关系而非"完全独立"。真实系统里更彻底：Linux 压根没有分开的 PCB 和 TCB。</span></div>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">29</div>
+    <div class="q-q">将内核支持线程（KST）与用户级线程（ULT）组合，可实现组合方式的 ULT/KST 线程。下列关于多线程模型，说法<b>错误</b>的是</div><div class="q-a">D</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">A ✓</span>组合方式中，一些 KST 对应多个 ULT，这是 ULT 通过分时多路复用 KST 来实现的。<br><span class="sub">这正是 M:N 的机制描述——多路复用。</span></div>
+      <div class="opt opt-t"><span class="opt-k">B ✓</span>多对一模型与一对一模型相比，前者的线程管理开销小、效率高，后者的并发性能更好。<br><span class="sub">M:1 全在用户态管理，开销小；1:1 能真正并行。两句都对。</span></div>
+      <div class="opt opt-t"><span class="opt-k">C ✓</span>多对一模型中多个线程不能同时在多个处理机上运行；一对一模型中允许多个线程并行地运行在多处理机系统上。<br><span class="sub">注意主语是<b>多对一</b>——这就对了。若把"不能并行"安到<b>多对多</b>头上则是错的。</span></div>
+      <div class="opt opt-f"><span class="opt-k">D ✗</span>多对多模型中，KST 的数目可以比 ULT 数少，也可以多于或等于 ULT 数量。<br><span class="sub"><b>本题答案。</b>M:N 的定义是"<b>M 个用户线程复用在 N 个内核实体上，N ≤ M</b>"。若 KST 多于 ULT，就有内核实体空转，模型失去意义。实践佐证：Go 的 P 数量默认 = CPU 核数，远少于 goroutine 数。</span></div>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">30</div>
+    <div class="q-q">关于用户级线程（ULT）和内核级线程（KLT）的实现机制，下列叙述<b>错误</b>的是</div><div class="q-a">C</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">A ✓</span>采用 ULT 时，线程的创建、撤销和同步都不需要通过系统调用陷入内核。<br><span class="sub">全部由用户态线程库完成，这正是 ULT 快的原因。</span></div>
+      <div class="opt opt-t"><span class="opt-k">B ✓</span>采用 KLT 时，操作系统内核能够感知到单个线程的存在并为其分配 CPU 时间片。<br><span class="sub">呼应第 22 题：时间片是给<b>线程</b>的。</span></div>
+      <div class="opt opt-f"><span class="opt-k">C ✗</span>无论采用 ULT 还是 KLT，同一进程下的各线程都拥有各自独立的 TCB 和<b>内核栈</b>。<br><span class="sub"><b>本题答案。</b>用户级线程<b>没有</b>自己的内核栈——内核根本不知道它们存在，整个进程在内核眼里只有一个调度实体、一个内核栈。只有内核级线程才每个配一个内核栈（x86-64 默认 16 KB）。另外 TCB 也需分层：ULT 的控制块在用户空间由线程库维护，KLT 的在内核空间。</span></div>
+      <div class="opt opt-t"><span class="opt-k">D ✓</span>无论采用 ULT 还是 KLT，同一进程下的各线程都共享该进程的全局变量和堆空间。<br><span class="sub">共享地址空间是"线程"这个概念的定义性特征，与实现方式无关。</span></div>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">31</div>
+    <div class="q-q">已知某操作系统中每创建一个用户线程都需要创建一个对应的内核线程，则在某进程中创建新的用户线程时，需要新分配的资源包括<br>I. 页表　II. 线程控制块　III. 用户态堆栈　IV. 内核态堆栈</div><div class="q-a">C</div></div>
+    <div class="q-b"><div class="q-in">
+      <p style="margin-bottom:14px">题干"每个用户线程对应一个内核线程"= <b>1:1 模型</b>。逐项判断：</p>
+      <div class="opt opt-f"><span class="opt-k">I ✗ 页表</span>不需要。同进程的线程<b>共享同一个地址空间</b>（<code>CLONE_VM</code> → 指向同一个 <code>mm_struct</code>，仅 <code>mm_users</code> 加一），不产生新页表。<span class="sub">这也正是"线程比进程轻"最核心的一条。</span></div>
+      <div class="opt opt-t"><span class="opt-k">II ✓ 线程控制块</span>必须新建。对应 Linux 的 <code>task_struct</code>（约 6–10 KB）。</div>
+      <div class="opt opt-t"><span class="opt-k">III ✓ 用户态堆栈</span>必须新建。glibc 用 <code>mmap</code> 分配匿名映射 + guard page，大小由 <code>RLIMIT_STACK</code> 决定（常见 2–10 MB）。</div>
+      <div class="opt opt-t"><span class="opt-k">IV ✓ 内核态堆栈</span>必须新建。1:1 下每个内核调度实体都要有自己的内核栈（x86-64 <code>THREAD_SIZE</code> = 16 KB）。</div>
+      <p style="margin-top:16px"><b>答案 C（II、III、IV）。</b>记忆口诀：<span class="mk">地址空间共享，栈和控制块独立</span>——两个栈都要新的，一个用户态一个内核态。</p>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">32</div>
+    <div class="q-q">下列关于进程与线程的说法中，正确的有<br>I. 进程总是资源分配的基本单位，线程只拥有少量资源、无法脱离进程运行<br>II. 线程是一部分程序段，多个线程构成一个进程<br>III. 线程之间的通信主要利用管道、共享存储、消息传递等机制<br>IV. 线程之间可以共享进程的地址空间，但无法共享各线程之间的栈空间</div><div class="q-a">A</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">I ✓</span>教材标准表述。线程只拥有寄存器、栈等少量必需资源，必须依附进程存在。</div>
+      <div class="opt opt-t"><span class="opt-k">II ✓</span>教材把线程视为进程中的一段执行流 / 程序段，多个线程共同构成一个进程的执行部分。<br><span class="sub">这句话在真实系统里其实相当粗糙（进程还包含资源，不只是线程的集合），但在本题的选项集合里它必须为真——因为 III、IV 都明显错，唯一可选的组合只有 A。<b>做题时用排除法更稳。</b></span></div>
+      <div class="opt opt-f"><span class="opt-k">III ✗</span>这是<b>进程间</b>通信（IPC）的手段。同进程线程<b>直接共享地址空间</b>，通信就是读写共享变量，只需<b>互斥锁、条件变量、读写锁、信号量、原子操作</b>来同步。<br><span class="sub">线程当然<b>也能</b>用管道，但那不是"主要"方式，反而是绕远路。</span></div>
+      <div class="opt opt-f"><span class="opt-k">IV ✗</span>前半句对，<b>后半句错</b>。所有线程栈都在<b>同一地址空间</b>的 mmap 区里，只要拿到指针就能读写别的线程的栈。<br><span class="sub">正确表述是"栈<b>逻辑上</b>私有（各有独立栈指针），但<b>物理上不隔离</b>"。</span></div>
+      <p style="margin-top:16px"><b>答案 A（I、II）。</b></p>
+    </div></div></div>
+
+  <div class="q rv"><div class="q-h"><div class="q-n">33</div>
+    <div class="q-q">进程 P 创建主线程 T0。T0 通过系统调用打开一个网络套接字，获得描述符 sock_fd。随后 T0 创建子线程 Ta 和 Tb 处理该套接字上的收发。下列哪些是 Ta 和 Tb <b>可以共享</b>的资源或信息？<br>I. 进程 P 的全局变量　II. 线程 T0 的局部变量存储区　III. 套接字描述符 sock_fd　IV. 线程 Ta 和 Tb 各自独立的程序计数器</div><div class="q-a">A</div></div>
+    <div class="q-b"><div class="q-in">
+      <div class="opt opt-t"><span class="opt-k">I ✓ 全局变量</span>位于数据段 / BSS，同一地址空间内所有线程共享。最典型的线程共享资源。</div>
+      <div class="opt opt-f"><span class="opt-k">II ✗ T0 的局部变量存储区</span>局部变量在 T0 的<b>栈</b>上，属于线程私有区域，<b>不是</b>设计上供共享的资源。<br><span class="sub"><b>但要小心理解这个"不能"：</b>它是<b>约定层面</b>的不共享，不是物理层面的不可访问。若 T0 主动把某个局部变量的地址传给 Ta，Ta 完全能读写它——这也正是"把局部变量地址传给子线程"成为经典 bug 来源的原因（T0 一旦返回，那块栈就失效，变成悬垂指针）。考场按<b>不共享</b>作答；工程上要知道它<b>可访问但危险</b>。</span></div>
+      <div class="opt opt-t"><span class="opt-k">III ✓ sock_fd</span>同进程线程共享<b>整张文件描述符表</b>（<code>CLONE_FILES</code>），fd 号在所有线程中都有效，指向同一个 <code>struct file</code> / <code>struct socket</code>。这正是"多线程共用一个 socket 收发"能成立的基础。</div>
+      <div class="opt opt-f"><span class="opt-k">IV ✗ 各自独立的程序计数器</span>题干自己就说了"<b>各自独立</b>"——独立即私有，谈何共享。PC 是线程私有上下文的第一项。</div>
+      <p style="margin-top:16px"><b>答案 A（I、III）。</b></p>
+      <div class="warn"><b>延伸：共享 fd 的真实风险</b>　Ta 和 Tb 共享 <code>sock_fd</code> 意味着共享同一个 <code>struct file</code> 的状态。对文件而言这意味着共享 <code>f_pos</code>（应改用 <code>pread</code>/<code>pwrite</code>）；对 TCP socket 而言，多线程并发 <code>write</code> 可能让<b>逻辑消息交织</b>——内核只保证单次系统调用原子，消息边界要应用层自己保证。</div>
+    </div></div></div>
+</section>
+
+<!-- ===== 終 ===== -->
+<section class="chap" id="c7">
+  <div class="chap-head rv"><div class="chap-num">終</div>
+    <div><div class="chap-jp">まとめ</div><h2>速查与易错点</h2></div></div>
+  <div class="chap-rule rv"></div>
+
+  <h3 class="rv">一页纸对照表</h3>
+  <div class="tw rv"><table>
+    <thead><tr><th>命题</th><th>应试标准答案</th><th>真实系统结论</th></tr></thead>
+    <tbody>
+      <tr><td>进程是资源分配单位、线程是调度单位</td><td class="yes">正确（必背）</td><td>Linux 无独立线程对象，调度实体是 <code>sched_entity</code>(task)；Windows 才是这套模型的现实对应</td></tr>
+      <tr><td>ULT 执行阻塞系统调用会阻塞整个进程</td><td class="yes">正确</td><td>纯 M:1 下正确；Go/Loom/tokio 等现代运行时不成立</td></tr>
+      <tr><td>KLT 缺页阻塞，同进程其他 KLT 仍可调度</td><td class="yes">正确</td><td class="yes">正确</td></tr>
+      <tr><td>进程被挂起时其 KLT 能否参与调度</td><td class="no">不能</td><td class="no">正确，SIGSTOP 作用于整个线程组</td></tr>
+      <tr><td>ULT "公平性更好"</td><td class="no">错误</td><td class="no">用户库看不到全局，整进程只占一份额，公平性反而更差</td></tr>
+      <tr><td>KLT 需要更多内存存 TCB / 上下文</td><td class="yes">正确</td><td class="yes">每 task 有 16 KB 内核栈 + task_struct（6–10 KB）</td></tr>
+      <tr><td>线程通信主要靠管道 / 共享存储 / 消息传递</td><td class="no">错误</td><td class="no">直接共享内存 + 锁 / 条件变量 / 原子操作</td></tr>
+      <tr><td>线程无法共享栈空间</td><td class="no">错误</td><td class="no">同一地址空间，拿到指针即可互访；只是"逻辑私有"</td></tr>
+      <tr><td>M:N 中多线程不能并行</td><td class="no">错误</td><td class="no">只有 M:1 不能并行</td></tr>
+      <tr><td>时间片用完，进程所有线程变就绪</td><td class="no">错误</td><td class="no">时间片属线程；Linux 6.6 起用 EEVDF，仍以 task 为实体</td></tr>
+    </tbody></table></div>
+
+  <h3 class="rv">六个必须警觉的瞬间</h3>
+  <div class="duo rv">
+    <div class="card"><div class="card-t"><span class="tag tag-w">警觉</span>看到"栈无法共享"</div>
+      <p style="margin-top:4px">立刻想：同一地址空间 → 物理可访问 → 这句话是<b>错</b>的。（Q32-IV）</p></div>
+    <div class="card"><div class="card-t"><span class="tag tag-w">警觉</span>看到"进程时间片"</div>
+      <p style="margin-top:4px">时间片属于<b>线程</b>。而且多线程不可能全处于执行态。（Q22-C）</p></div>
+    <div class="card"><div class="card-t"><span class="tag tag-w">警觉</span>看到"用户级线程更公平"</div>
+      <p style="margin-top:4px">快是真的，<b>公平是假的</b>。看不到全局怎么公平。（Q23-D）</p></div>
+    <div class="card"><div class="card-t"><span class="tag tag-w">警觉</span>看到"不需要保存寄存器"</div>
+      <p style="margin-top:4px">是"不需要保存<b>全部</b>"，不是"不保存"。（Q25-D）</p></div>
+    <div class="card"><div class="card-t"><span class="tag tag-w">警觉</span>看到"多对多不能并行"</div>
+      <p style="margin-top:4px">看清主语。<b>多对一</b>才不能并行。（Q29-C 对 / D 错）</p></div>
+    <div class="card"><div class="card-t"><span class="tag tag-w">警觉</span>看到"ULT 也有内核栈"</div>
+      <p style="margin-top:4px">内核都看不见它，哪来的内核栈。（Q30-C）</p></div>
+  </div>
+
+  <h3 class="rv">时效性提醒</h3>
+  <ul class="rv">
+    <li><b>EEVDF 取代 CFS：</b>自 Linux 6.6（2023）起默认调度器已是 EEVDF。早于此的教材都写 CFS。两者调度实体都是 task，不影响结论。</li>
+    <li><b>UMS 移除：</b>Windows 11 起才真正移除 OS 层 UMS API；更早弃用的是 ConcRT 对它的使用，两件事别混。</li>
+    <li><b>数据的版本依赖：</b>内核栈 16 KB、glibc 栈 2–10 MB、goroutine 栈 2 KB、Go 的 M 上限 10000——都是特定版本 / 架构的默认值，会随 <code>ulimit</code>、<code>GOMAXPROCS</code>、<code>-Xss</code> 变化。</li>
+    <li><b>Li/Ding/Shen 的 3.4 μs：</b>2007 年 Linux 2.6.17 + 当年硬件的数据。现代硬件绝对值更低，但"直接成本 μs 级、间接成本受 cache 主导"的结论依然成立。</li>
+    <li><b>Scheduler Activations 的年份：</b>会议版 SOSP 1991，期刊版 ACM TOCS 1992——同一工作，两个年份都对。</li>
+  </ul>
+
+  <div class="note rv"><b>答题原则</b>　408 统考以标准模型为准绳。只有当题目明确说"在 Linux 中"，或要求"辨析下列说法是否正确"时，才把真实实现的知识拿出来用。<span class="mk-f">先拿分，再较真。</span></div>
+</section>
+
+<div class="fin">
+  <div class="k">糸</div>
+  <p>共享一切的东西，也就没有什么真正属于自己。<br>除了那一小段栈，和寄存器里最后的状态。</p>
+  <p style="margin-top:26px;font-size:11.5px;letter-spacing:.24em;color:var(--sumi-3)">408 · 操作系统 · 第二章 进程与线程 · 1000题 22–33</p>
+</div>
+
+</div>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var rain=document.getElementById('rain'),rh='';
+  for(var i=0;i<46;i++){
+    rh+='<i style="left:'+(Math.random()*100).toFixed(2)+'%;animation-duration:'+(2.4+Math.random()*3.6).toFixed(2)+
+        's;animation-delay:-'+(Math.random()*6).toFixed(2)+'s;opacity:'+(0.3+Math.random()*0.7).toFixed(2)+'"></i>';
+  }
+  rain.innerHTML=rh;
+
+  var bk=document.getElementById('bokeh'),bh='';
+  for(var j=0;j<26;j++){
+    var s=(6+Math.random()*26).toFixed(1);
+    bh+='<span style="left:'+(Math.random()*100).toFixed(2)+'%;bottom:-8%;width:'+s+'px;height:'+s+
+        'px;animation-duration:'+(16+Math.random()*22).toFixed(1)+'s;animation-delay:-'+(Math.random()*26).toFixed(1)+'s"></span>';
+  }
+  bk.innerHTML=bh;
+
+  var cv=document.getElementById('petals'),ctx=cv.getContext('2d'),W,H,ps=[];
+  function size(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+  size();addEventListener('resize',size);
+  var COLORS=['rgba(233,168,190,','rgba(245,205,220,','rgba(200,186,232,','rgba(250,228,236,'];
+  function mk(y){
+    return{x:Math.random()*W,y:(y===undefined)?Math.random()*H:y,
+      r:3+Math.random()*5.5,sp:.28+Math.random()*.85,
+      sw:.4+Math.random()*1.1,ph:Math.random()*Math.PI*2,
+      rot:Math.random()*Math.PI*2,rs:(Math.random()-.5)*.024,
+      o:.28+Math.random()*.5,c:COLORS[(Math.random()*COLORS.length)|0]};
+  }
+  if(!reduce){for(var k=0;k<38;k++)ps.push(mk());}
+  function petal(p){
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+    ctx.beginPath();
+    ctx.moveTo(0,-p.r);
+    ctx.bezierCurveTo(p.r*.92,-p.r*.55,p.r*.72,p.r*.72,0,p.r);
+    ctx.bezierCurveTo(-p.r*.72,p.r*.72,-p.r*.92,-p.r*.55,0,-p.r);
+    ctx.fillStyle=p.c+p.o+')';ctx.fill();
+    ctx.restore();
+  }
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<ps.length;i++){
+      var p=ps[i];
+      p.y+=p.sp;p.ph+=.016;p.x+=Math.sin(p.ph)*p.sw;p.rot+=p.rs;
+      if(p.y-p.r>H){ps[i]=mk(-14);}
+      petal(ps[i]);
+    }
+    requestAnimationFrame(loop);
+  }
+  if(!reduce)loop();
+
+  var pg=document.getElementById('pg');
+  function prog(){
+    var h=document.documentElement.scrollHeight-innerHeight;
+    pg.style.width=(h>0?(scrollY/h)*100:0)+'%';
+  }
+  addEventListener('scroll',prog,{passive:true});prog();
+
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+  },{threshold:.08,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.rv').forEach(function(el,i){
+    el.style.transitionDelay=(Math.min(i%6,5)*55)+'ms';io.observe(el);
+  });
+
+  var bio=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(!e.isIntersecting)return;
+      var el=e.target;
+      if(el.classList.contains('bar')){
+        el.style.transition='width 1.6s cubic-bezier(.2,.8,.3,1)';
+        el.setAttribute('width',el.getAttribute('data-w'));
+      }else{
+        var h=+el.getAttribute('data-h');
+        el.style.transition='all 1.4s cubic-bezier(.2,.8,.3,1)';
+        el.setAttribute('height',h);el.setAttribute('y',190-h);
+      }
+      bio.unobserve(el);
+    });
+  },{threshold:.4});
+  document.querySelectorAll('.bar,.bar2').forEach(function(b){bio.observe(b);});
+
+  var secs=[].slice.call(document.querySelectorAll('#c0,#c1,#c2,#c3,#c4,#c5,#c6,#c7'));
+  var links=[].slice.call(document.querySelectorAll('.rail a'));
+  function nav(){
+    var y=scrollY+innerHeight*.35,cur=0;
+    for(var i=0;i<secs.length;i++){if(secs[i].offsetTop<=y)cur=i;}
+    links.forEach(function(a,i){if(i===cur){a.classList.add('on');}else{a.classList.remove('on');}});
+  }
+  addEventListener('scroll',nav,{passive:true});nav();
+
+  document.querySelectorAll('#tabs .tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('#tabs .tab').forEach(function(x){x.classList.remove('on');});
+      document.querySelectorAll('.pane').forEach(function(x){x.classList.remove('on');});
+      t.classList.add('on');
+      document.getElementById(t.getAttribute('data-p')).classList.add('on');
+    });
+  });
+
+  document.querySelectorAll('.q').forEach(function(q){
+    var h=q.querySelector('.q-h'),b=q.querySelector('.q-b');
+    h.addEventListener('click',function(){
+      var open=q.classList.toggle('open');
+      b.style.maxHeight=open?(b.scrollHeight+120)+'px':'0px';
+    });
+  });
+  addEventListener('resize',function(){
+    document.querySelectorAll('.q.open').forEach(function(q){
+      var b=q.querySelector('.q-b');b.style.maxHeight=(b.scrollHeight+120)+'px';
+    });
+  });
+})();
+</script>
+</body>
+</html>
